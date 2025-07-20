@@ -1,0 +1,42 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('bookings', function (Blueprint $table) {
+            $table->id();
+            $table->string('booking_code', 10)->unique();
+            $table->foreignId('event_id')->constrained()->onDelete('cascade');
+            $table->date('date');
+            $table->time('start_time');
+            $table->time('end_time');
+            $table->text('location_detail');
+            $table->string('client_name');
+            $table->string('male_parents')->nullable();
+            $table->string('female_parents')->nullable();
+            $table->string('phone');
+            $table->string('email')->nullable();
+            $table->string('nuance')->nullable();
+            $table->string('image')->nullable();
+            $table->text('notes')->nullable();
+            $table->enum('status', ['tertunda', 'disetujui', 'ditolak'])->default('tertunda');
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('bookings');
+    }
+};
