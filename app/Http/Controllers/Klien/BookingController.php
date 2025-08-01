@@ -11,36 +11,30 @@ class BookingController extends Controller
 {
     public function store(Request $request)
     {
-        // info('Masuk ke controller');
-        // info($request->all());
-
-        // Simpan bukti transfer ke storage
         $imagePath = null;
-        if ($request->hasFile('bukti_tf')) {
-            $imagePath = $request->file('bukti_tf')->store('bukti_tf', 'public');
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('image', 'public');
         }
 
-        // Simpan data ke database
         $booking = Booking::create([
             'booking_code'    => Str::random(10),
             'event_id'        => $request->event_id,
             'user_id'         => auth()->id(),
-            'date'            => $request->tanggal,
+            'date'            => $request->date,
             'start_time'      => $request->start_time,
             'end_time'        => $request->end_time,
-            'location_detail'        => $request->alamat,
-            'client_name'     => $request->nama_pengantin,
-            'male_parents'    => $request->ortu_pria,
-            'female_parents'  => $request->ortu_wanita,
-            'phone'           => $request->no_hp,
+            'location_detail' => $request->location_detail,
+            'client_name'     => $request->client_name,
+            'male_parents'    => $request->male_parents,
+            'female_parents'  => $request->female_parents,
+            'phone'           => $request->phone,
             'email'           => $request->email,
-            'nuance'          => $request->tema,
+            'nuance'          => $request->nuance,
             'image'           => $imagePath,
-            'notes'           => $request->catatan,
+            'notes'           => $request->notes,
             'status'          => 'tertunda',
         ]);
 
-        // Untuk debug
         info('Berhasil simpan booking', $booking->toArray());
 
         return redirect('/')->with('pesanan_berhasil', true);

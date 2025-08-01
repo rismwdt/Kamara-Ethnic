@@ -2,42 +2,50 @@
 
 namespace App\Http\Controllers\Klien;
 
-use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use App\Services\ScheduleOptimizer;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class ScheduleController extends Controller
 {
     public function checkSchedule(Request $request)
-    {
-        $request->validate([
-            'event_id' => 'required|exists:events,id',
-            'date' => 'required|date|after_or_equal:' . now()->addDays(3)->format('Y-m-d'), // ✅ H-2
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'location' => 'required|string|max:255',
-        ]);
+{
+    $request->validate([
+        'event_id' => 'required|exists:events,id',
+        'date' => 'required|date|after_or_equal:' . now()->addDays(3)->format('Y-m-d'),
+        'start_time' => 'required|date_format:H:i',
+        'end_time' => 'required|date_format:H:i|after:start_time',
+        'location_detail' => 'required|string',
+    ]);
 
-        $optimizer = new ScheduleOptimizer();
+    $startTime = Carbon::createFromFormat('H:i', $request->start_time)->format('H:i:s');
+    $endTime = Carbon::createFromFormat('H:i', $request->end_time)->format('H:i:s');
+    $date = Carbon::parse($request->date);
 
-        if (!$optimizer->canAcceptInWeek($request->date)) {
-            return response()->json([
-                'available' => false,
-                'message' => 'Kuota acara dalam minggu tersebut sudah penuh (maksimal 5).'
-            ]);
-        }
+    \Log::info("Cek jadwal | Date: {$request->date}, Start: $startTime, End: $endTime");
 
-        $isAvailable = $optimizer->isAvailable(
-            $request->date,
-            $request->start_time,
-            $request->end_time,
-            $request->location
-        );
+    $optimizer = new ScheduleOptimizer();
 
+    if (!$optimizer->canAcceptInDay($date)) {
         return response()->json([
-            'available' => $isAvailable,
-            'message' => $isAvailable ? 'Tersedia' : 'Jadwal sudah penuh atau bentrok.'
+            'available' => false,
+            'message' => 'Kuota acara pada hari tersebut sudah penuh (maksimal 5 acara).'
         ]);
     }
+
+    $isAvailable = $optimizer->isAvailable(
+        $date,
+        $startTime,
+        $endTime,
+        $request->location_detail
+    );
+
+    return response()->json([
+        'available' => $isAvailable,
+        'message' => $isAvailable ? 'Tersedia' : 'Jadwal sudah penuh atau bentrok.'
+    ]);
+}
+
 }

@@ -58,6 +58,22 @@
                             {{ \Carbon\Carbon::parse($booking->end_time)->format('H:i') }}</td>
                     </tr>
                     <tr>
+                        <th class="py-2 pr-4 font-medium">Durasi</th>
+                        <td>:
+    @if (is_numeric($duration))
+    @if ($duration > 0)
+        {{ floor($duration / 60) > 0 ? floor($duration / 60) . ' jam ' : '' }}
+        {{ $duration % 60 }} menit
+    @else
+        <span class="text-red-600">Waktu tidak valid</span>
+    @endif
+@else
+    <span class="text-gray-500">Durasi belum tersedia</span>
+@endif
+</td>
+
+                    </tr>
+                    <tr>
                         <th class="py-2 pr-4 font-medium">Alamat Lengkap</th>
                         <td>: {{ $booking->location_detail }}</td>
                     </tr>

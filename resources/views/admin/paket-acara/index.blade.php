@@ -74,5 +74,8 @@
             </tr>
             @endforeach
         </x-table>
+        <div class="mt-8 flex justify-center">
+                {{ $events->links() }}
+        </div>
     </main>
 </x-app-layout>

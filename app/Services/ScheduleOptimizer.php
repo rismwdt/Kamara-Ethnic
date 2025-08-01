@@ -7,33 +7,28 @@ use Carbon\Carbon;
 
 class ScheduleOptimizer
 {
-    public function isAvailable($date, $start, $end, $location)
-    {
-        return !Booking::where('date', $date)
-            ->whereIn('status', ['tertunda', 'diterima'])
-            ->where(function ($query) use ($start, $end) {
-                $query->whereBetween('start_time', [$start, $end])
-                      ->orWhereBetween('end_time', [$start, $end])
-                      ->orWhere(function ($q2) use ($start, $end) {
-                          $q2->where('start_time', '<=', $start)
-                             ->where('end_time', '>=', $end);
-                      });
-            })
-            ->exists();
+    public function isAvailable(Carbon $date, $startTime, $endTime, $locationDetail)
+{
+    $bookings = Booking::where('date', $date->toDateString())->get();
+
+    foreach ($bookings as $booking) {
+        $existingStart = Carbon::parse($booking->start_time);
+        $existingEnd = Carbon::parse($booking->end_time);
+        $newStart = Carbon::parse($startTime);
+        $newEnd = Carbon::parse($endTime);
+
+        $overlap = $newStart < $existingEnd && $existingStart < $newEnd;
+
+        $normalizedExisting = strtolower(trim($booking->location_detail));
+$normalizedInput = strtolower(trim($locationDetail));
+
+if ($overlap && levenshtein($normalizedExisting, $normalizedInput) < 10) {
+    return false;
+}
     }
 
-    // public function canAcceptInWeek($date)
-    // {
-    //     $date = Carbon::parse($date);
-    //     $startOfWeek = $date->copy()->startOfWeek(); // default Senin
-    //     $endOfWeek = $date->copy()->endOfWeek();
-
-    //     $eventCount = Booking::whereBetween('date', [$startOfWeek, $endOfWeek])
-    //         ->whereIn('status', ['tertunda', 'diterima'])
-    //         ->count();
-
-    //     return $eventCount < 5; // maksimal 5 event
-    // }
+    return true;
+}
 
     public function canAcceptInDay($date)
     {
@@ -43,4 +38,31 @@ class ScheduleOptimizer
 
         return $eventCount < 5;
     }
+
+    public function greedyScheduleForDate($date)
+    {
+        $bookings = Booking::whereDate('date', $date)
+            ->where('status', 'tertunda')
+            ->orderBy('end_time')
+            ->get();
+
+        $selected = collect();
+        $rejected = [];
+        $lastEnd = null;
+
+        foreach ($bookings as $booking) {
+            if (!$lastEnd || $booking->start_time >= $lastEnd) {
+                $selected->push($booking);
+                $lastEnd = $booking->end_time;
+            } else {
+                $rejected[] = $booking;
+            }
+        }
+
+        return [
+            'recommended' => $selected,
+            'rejected' => $rejected,
+        ];
+    }
+
 }

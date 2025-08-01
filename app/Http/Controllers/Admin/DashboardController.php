@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Booking;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 
@@ -43,14 +44,27 @@ class DashboardController extends Controller
             ->count('email');
 
         // Tanggal minggu ini (Senin - Minggu)
-        $startOfWeek = now()->startOfWeek();
-        $endOfWeek = now()->endOfWeek();
-        $jadwalMingguIni = $bookings->whereBetween('date', [$startOfWeek, $endOfWeek]);
+        $startOfWeek = now()->startOfWeek();  // default: Senin
+$endOfWeek = now()->endOfWeek();      // default: Minggu
+
+$jadwalMingguIni = $bookings
+    ->whereBetween('date', [$startOfWeek, $endOfWeek])
+    ->sortBy(function ($booking) {
+        return $booking->date . ' ' . $booking->start_time;
+    })
+    ->take(8)
+    ->values();
 
         // Tanggal di bulan ini yang punya acara
         $tanggalDenganAcara = Booking::whereMonth('date', now()->month)
-        ->pluck('date')
-        ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'));
+    ->selectRaw('date, COUNT(*) as jumlah')
+    ->groupBy('date')
+    ->get()
+    ->mapWithKeys(function ($item) {
+        return [
+            \Carbon\Carbon::parse($item->date)->format('Y-m-d') => $item->jumlah,
+        ];
+    });
 
         return view('dashboard', compact(
             'totalPendapatan',

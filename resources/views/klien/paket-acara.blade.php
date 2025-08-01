@@ -3,7 +3,7 @@
         <div class="w-full px-4">
             <div class="max-w-xl mx-auto text-center mb-16">
                 <h4 class="font-semibold text-lg text-primary mb-2">Paket Acara</h4>
-                <h2 class="font-bold text-dark text-3xl mb-4 md:text-4xl lg:text-5xl">Paket Acara Tradisional Kamara
+                <h2 class="font-bold text-dark text-3xl mb-4 md:text-4xl lg:text-5xl">Paket Acara Kamara
                     Ethnic</h2>
                 <p class="font-medium text-md text-secondary md:text-lg">
                     Kami menyediakan berbagai paket pertunjukan seni tradisional khas Sunda yang memeriahkan momen
@@ -30,11 +30,10 @@
                     </button>
                     @auth
                     <button
-    onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-jadwal' }))"
-    class="bg-primary text-white text-lg font-sans font-semibold rounded-lg px-8 py-2 flex items-center justify-center gap-2 hover:bg-[#5a0c0f] hover:text-white transition">
+    data-event-id="{{ $event->id }}"
+    class="btnPesanSekarang bg-primary text-white text-lg font-sans font-semibold rounded-lg px-8 py-2 flex items-center justify-center gap-2 hover:bg-[#5a0c0f] hover:text-white transition">
     Pesan Sekarang
 </button>
-                    @include('klien.modal-pesanan')
                     @else
                     <a href="{{ route('login') }}"
                         class="bg-primary text-white text-lg font-sans font-semibold rounded-lg px-8 py-2 flex items-center justify-center gap-2 hover:bg-[#5a0c0f] hover:text-white transition">
@@ -58,3 +57,5 @@
         </div>
     </div>
 </section>
+
+@include('klien.modal-pesanan')

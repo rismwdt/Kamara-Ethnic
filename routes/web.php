@@ -29,19 +29,23 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
-
+Route::get('tes-cetak', [PesananController::class, 'cetakPdf']);
 //Admin
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+    Route::get('pesanan/{pesanan}', [PesananController::class, 'show'])->name('admin.pesanan.show');
     Route::resource('pengisi-acara', PerformerController::class)->except(['show']);
     Route::resource('paket-acara', EventController::class)->except(['show']);
     Route::resource('lokasi-acara', LocationController::class)->except(['show']);
     Route::resource('estimasi', LocationEstimateController::class)->except(['show']);
     Route::resource('pesanan', PesananController::class)->except(['show']);
-    Route::get('pesanan/{pesanan}', [PesananController::class, 'show'])->name('admin.pesanan.show');
+    Route::get('admin/pesanan/cetak', [PesananController::class, 'cetakPdf'])->name('admin.pesanan.cetak');
+    Route::get('pesanan/rekomendasi', [PesananController::class, 'rekomendasiHariIni'])->name('admin.pesanan.rekomendasi');
 });
 
 //Klien
-Route::post('/cek-jadwal', [ScheduleController::class, 'checkSchedule'])->name('cek-jadwal');
-Route::post('/pesanan', [BookingController::class, 'store'])->name('booking.store');
+Route::middleware(['auth', 'role:client'])->group(function () {
+    Route::post('/cek-jadwal', [ScheduleController::class, 'checkSchedule'])->name('cek-jadwal');
+    Route::post('/pesanan', [BookingController::class, 'store'])->name('booking.store');
+});
 
 require __DIR__.'/auth.php';

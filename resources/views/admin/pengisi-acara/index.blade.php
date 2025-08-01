@@ -76,6 +76,9 @@
                 </tr>
                 @endforeach
             </x-table>
+            <div class="mt-8 flex justify-center">
+                    {{ $performers->links() }}
+            </div>
         </div>
     </main>
 </x-app-layout>

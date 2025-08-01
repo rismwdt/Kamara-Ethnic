@@ -13,7 +13,7 @@ class PerformerController extends Controller
      */
     public function index()
     {
-        $performers = Performer::all();
+        $performers = Performer::oldest()->paginate(10);
         return view('admin.pengisi-acara.index', compact('performers'));
     }
 
@@ -45,14 +45,6 @@ class PerformerController extends Controller
         Performer::create($request->all());
 
         return redirect()->route('pengisi-acara.index')->with('success', 'Pengisi acara berhasil ditambahkan.');
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
     }
 
     /**

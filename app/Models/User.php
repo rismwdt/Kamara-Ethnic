@@ -58,4 +58,9 @@ class User extends Authenticatable
             get: fn ($avatar) => $avatar != '' ? asset('/storage/profiles/' . $avatar) : 'https://www.gravatar.com/avatar/b2b58f77632a6f5c46d30b08108baa57?d=mm&s=150',
         );
     }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class);
+    }
 }

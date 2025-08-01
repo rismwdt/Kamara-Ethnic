@@ -1,91 +1,88 @@
-// TOMBOL "PESAN SEKARANG" – Buka modal pemilihan jadwal
-document.querySelectorAll('.btnPesanSekarang').forEach(button => {
-    button.addEventListener('click', () => {
-        const eventId = button.dataset.eventId;
-        const modal = document.getElementById('modalJadwal');
-        const form = document.getElementById('formJadwal');
-
-        if (modal && form) {
-            modal.classList.remove('hidden');
-            form.reset(); // reset input agar tidak ada data lama
-            form.querySelector('input[name="event_id"]').value = eventId;
-        }
-
-        // Juga isi form pemesanan dengan event_id agar konsisten
-        const pesananInput = document.querySelector('#modalPesanan input[name="event_id"]');
-        if (pesananInput) {
-            pesananInput.value = eventId;
-        }
-    });
-});
-
-// TUTUP MODAL BENTROK LALU KEMBALI KE MODAL JADWAL
-function tutupModalBentrokDanBukaJadwal() {
-    const modalBentrok = document.getElementById('modalJadwalBentrok');
-    const modalJadwal = document.getElementById('modalJadwal');
-
-    if (modalBentrok && modalJadwal) {
-        modalBentrok.classList.add('hidden');
-        modalJadwal.classList.remove('hidden');
-    }
-}
-
-// SAAT FORM JADWAL DIKIRIM UNTUK CEK JADWAL
-document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('formJadwal');
-
-    if (!form) return;
-
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-
-        const formData = new FormData(this);
-
-        fetch(this.action, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            },
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.available) {
-                // Jadwal tersedia → buka modal pesanan
-                document.getElementById('modalJadwal')?.classList.add('hidden');
-                document.getElementById('modalPesanan')?.classList.remove('hidden');
-
-                // Isi otomatis data ke form pemesanan
-                document.querySelector('#modalPesanan input[name="tanggal"]').value = formData.get('date');
-                document.querySelector('#modalPesanan input[name="start_time"]').value = formData.get('start_time');
-                document.querySelector('#modalPesanan input[name="end_time"]').value = formData.get('end_time');
-                document.querySelector('#modalPesanan textarea[name="alamat"]').value = formData.get('location');
-            } else {
-                // Jadwal bentrok → tampilkan modal gagal
-                document.getElementById('modalJadwal')?.classList.add('hidden');
-                document.getElementById('modalJadwalBentrok')?.classList.remove('hidden');
-            }
-        })
-        .catch(error => {
-            console.error('Jadwal check error:', error);
-            alert("Terjadi kesalahan saat mengecek jadwal. Silakan coba lagi.");
-        });
-    });
-});
+console.log("jadwal.js loaded");
 
 document.addEventListener('DOMContentLoaded', function () {
     document.querySelectorAll('.btnPesanSekarang').forEach(button => {
-        button.addEventListener('click', function () {
-            const eventId = this.getAttribute('data-event-id');
-            const eventInput = document.getElementById('event_id_input');
-            if (eventInput) {
-                eventInput.value = eventId;
-            }
+        button.addEventListener('click', () => {
+            const eventId = button.dataset.eventId;
 
-            const modal = document.getElementById('modal-jadwal');
-            if (modal) {
-                modal.classList.remove('hidden');
-            }
+            const form = document.getElementById('formJadwal');
+            form?.reset();
+
+            const inputJadwal = form?.querySelector('input[name="event_id"]');
+            const inputPesanan = document.querySelector('#modalPesanan input[name="event_id"]');
+
+            if (inputJadwal) inputJadwal.value = eventId;
+            if (inputPesanan) inputPesanan.value = eventId;
+
+            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-jadwal' }));
         });
     });
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById('cek-jadwal-button').addEventListener('click', function (e) {
+        e.preventDefault();
+        const form = document.getElementById('formJadwal');
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        const formData = new FormData(form);
+
+        console.log("Data dikirim:");
+        for (let [key, value] of formData.entries()) {
+            console.log(`${key}: ${value}`);
+        }
+
+        fetch(form.action, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                'Accept': 'application/json',
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Respons:', data);
+            if (data.available) {
+                const eventId = form.querySelector('input[name="event_id"]').value;
+                const tanggal = form.querySelector('input[name="date"]').value;
+                const mulai   = form.querySelector('input[name="start_time"]').value;
+                const selesai = form.querySelector('input[name="end_time"]').value;
+                const alamat  = form.querySelector('#alamat')?.value ?? '';
+
+                const formPesanan = document.getElementById('formPesanan');
+                if (formPesanan) {
+                    const locationInput = formPesanan.querySelector('textarea[name="location_detail"]');
+                    console.log("Field lokasi ditemukan:", locationInput);
+
+                    formPesanan.querySelector('input[name="event_id"]').value = eventId;
+                    formPesanan.querySelector('input[name="date"]').value = tanggal;
+                    formPesanan.querySelector('input[name="start_time"]').value = mulai;
+                    formPesanan.querySelector('input[name="end_time"]').value = selesai;
+                    if (locationInput) {
+                        locationInput.value = alamat;
+                    }
+                }
+
+                window._dataPesanan = { eventId, tanggal, mulai, selesai, alamat };
+
+                window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-pesanan' }));
+            } else {
+                window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-jadwal-bentrok' }));
+            }
+            window.dispatchEvent(new CustomEvent('close-modal', { detail: 'modal-jadwal' }));
+        })
+        .catch(error => {
+            console.error('Gagal:', error);
+        });
+    });
+});
+
+function tutupModalBentrokDanBukaJadwal() {
+    window.dispatchEvent(new CustomEvent('close-modal', { detail: 'modal-jadwal-bentrok' }));
+    window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-jadwal' }));
+}

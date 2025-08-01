@@ -37,9 +37,16 @@
                 {{ __('DATA OPERASIONAL') }}
             </div>
             <x-nav-link :href="route('pesanan.index')" :active="request()->routeIs('pesanan.*')"
-                class="flex items-center space-x-3 py-2 px-4 pt-4 w-full hover:bg-gray-100">
-                <i class="fas fa-file-alt text-gray-500"></i>
-                <span>{{ __('Pesanan') }}</span>
+                class="flex items-center justify-between py-2 px-4 pt-4 w-full hover:bg-gray-100">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-file-alt text-gray-500"></i>
+                    <span>{{ __('Pesanan') }}</span>
+                </div>
+                @if(!empty($pendingBookings) && $pendingBookings > 0)
+                    <span class="inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                        {{ $pendingBookings }}
+                    </span>
+                @endif
             </x-nav-link>
             {{-- <x-nav-link :href="route('login')" :active="request()->routeIs('login')"
                 class="flex items-center space-x-3 py-2 px-4 pt-4 w-full hover:bg-gray-100">

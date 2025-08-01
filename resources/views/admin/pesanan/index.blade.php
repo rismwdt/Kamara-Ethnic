@@ -12,11 +12,45 @@
         </div>
         @endif
         <div class="flex justify-between items-center mb-4">
-            {{-- <form action="{{ route('pesanan.export') }}" method="GET"> --}}
-            <x-primary-button type="submit">
+            <x-primary-button x-data x-on:click="$dispatch('open-modal', 'modal-unduh-laporan')">
                 <i class="fas fa-download mr-1"></i> Unduh Laporan
             </x-primary-button>
-            </form>
+
+            <x-modal name="modal-unduh-laporan" focusable>
+                <div class="relative p-6">
+                    <button type="button" class="absolute top-4 right-4 text-gray-500 hover:text-red-600 text-3xl"
+                        x-on:click="$dispatch('close')">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+
+                    <form method="GET" action="{{ route('admin.pesanan.cetak') }}" target="_blank">
+                        <h2 class="text-lg font-medium text-gray-900">Unduh Laporan Pemesanan</h2>
+                        <p class="mt-1 text-sm text-gray-600">
+                            Pilih rentang tanggal untuk mengunduh laporan pemesanan acara.
+                        </p>
+
+                        <div class="mt-4">
+                            <label for="start_date" class="block text-sm font-medium text-gray-700">Tanggal Awal</label>
+                            <input type="date" name="start_date" id="start_date" required
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        </div>
+
+                        <div class="mt-4">
+                            <label for="end_date" class="block text-sm font-medium text-gray-700">Tanggal Akhir</label>
+                            <input type="date" name="end_date" id="end_date" required
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        </div>
+
+                        <div class="mt-6 flex justify-end">
+                            <x-secondary-button x-on:click.prevent="$dispatch('close')">Batal</x-secondary-button>
+                            <x-primary-button type="submit" class="ml-3">Unduh PDF</x-primary-button>
+                        </div>
+                    </form>
+                </div>
+            </x-modal>
         </div>
         <x-table>
             <x-slot name="thead">
@@ -94,5 +128,8 @@
             </tr>
             @endforeach
         </x-table>
+        <div class="mt-8 flex justify-center">
+            {{ $bookings->links() }}
+        </div>
     </main>
 </x-app-layout>

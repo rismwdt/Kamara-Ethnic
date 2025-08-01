@@ -14,6 +14,7 @@ class Booking extends Model
     protected $fillable = [
         'booking_code',
         'event_id',
+        'user_id',
         'date',
         'start_time',
         'end_time',
@@ -28,6 +29,11 @@ class Booking extends Model
         'notes',
         'status'
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
     public function event()
     {

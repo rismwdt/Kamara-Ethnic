@@ -12,43 +12,8 @@ class LocationEstimateController extends Controller
     public function index()
     {
         $estimasiList = LocationEstimate::with(['fromLocation', 'toLocation'])->get();
-    $allLocations = Location::orderBy('full_address')->get();
+        $allLocations = Location::orderBy('full_address')->get();
 
-    $existingPairs = LocationEstimate::all();
-    $existingCombinations = [];
-
-    foreach ($existingPairs as $pair) {
-        $a = $pair->from_location_id;
-        $b = $pair->to_location_id;
-        $key = implode('-', collect([$a, $b])->sort()->toArray());
-        $existingCombinations[$key] = true;
-    }
-
-    $filteredLocations = $allLocations->filter(function ($loc) use ($allLocations, $existingCombinations) {
-        foreach ($allLocations as $other) {
-            if ($loc->id !== $other->id) {
-                $key = implode('-', collect([$loc->id, $other->id])->sort()->toArray());
-                if (!isset($existingCombinations[$key])) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    });
-
-    return view('admin.lokasi-acara.index', [
-        'estimasiList' => $estimasiList,
-        'locations' => $filteredLocations,
-        'allLocations' => $allLocations, // semua lokasi untuk modal edit
-    ]);
-    }
-
-
-    public function create()
-    {
-        $locations = Location::orderBy('full_address')->get();
-
-        // Ambil semua kombinasi dua arah yang sudah ada
         $existingPairs = LocationEstimate::all();
         $existingCombinations = [];
 
@@ -59,7 +24,40 @@ class LocationEstimateController extends Controller
             $existingCombinations[$key] = true;
         }
 
-        // Filter lokasi yang masih memiliki kombinasi yang belum diisi
+        $filteredLocations = $allLocations->filter(function ($loc) use ($allLocations, $existingCombinations) {
+            foreach ($allLocations as $other) {
+                if ($loc->id !== $other->id) {
+                    $key = implode('-', collect([$loc->id, $other->id])->sort()->toArray());
+                    if (!isset($existingCombinations[$key])) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
+
+        return view('admin.lokasi-acara.index', [
+            'estimasiList' => $estimasiList,
+            'locations' => $filteredLocations,
+            'allLocations' => $allLocations, // semua lokasi untuk modal edit
+        ]);
+    }
+
+
+    public function create()
+    {
+        $locations = Location::orderBy('full_address')->get();
+
+        $existingPairs = LocationEstimate::all();
+        $existingCombinations = [];
+
+        foreach ($existingPairs as $pair) {
+            $a = $pair->from_location_id;
+            $b = $pair->to_location_id;
+            $key = implode('-', collect([$a, $b])->sort()->toArray());
+            $existingCombinations[$key] = true;
+        }
+
         $filteredLocations = $locations->filter(function ($loc) use ($locations, $existingCombinations) {
             foreach ($locations as $other) {
                 if ($loc->id !== $other->id) {
@@ -119,7 +117,7 @@ class LocationEstimateController extends Controller
 
         $estimate->update($request->all());
 
-        return redirect()->route('lokasi.index')->with('success', 'Estimasi berhasil diperbarui.');
+        return redirect()->route('lokasi-acara.index')->with('success', 'Estimasi berhasil diperbarui.');
     }
 
     public function destroy($id)

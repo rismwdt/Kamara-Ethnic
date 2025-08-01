@@ -60,12 +60,17 @@
                             <i class="fas fa-trash"></i>
                         </x-danger-button>
                         <x-modal-delete name="delete-{{ $estimasi->id }}" :itemId="$estimasi->id"
-                            :itemName="$estimasi->name" route="lokasi-acara.destroy" />
+                            :itemName="$estimasi->fromLocation->name . ' → ' . $estimasi->toLocation->name"
+                            route="estimasi.destroy" />
                     </div>
                 </td>
             </tr>
-            @include('admin.lokasi-acara.modal-lokasi', ['estimate' => $estimasi, 'locations' => $locations])
             @endforeach
         </x-table>
+        {{-- <div class="mt-8 flex justify-center">
+    {{ $estimasiList->links() }}
+        </div> --}}
     </main>
 </x-app-layout>
+
+@include('admin.lokasi-acara.modal-lokasi', ['estimate' => $estimasi, 'locations' => $locations])

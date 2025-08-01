@@ -15,15 +15,17 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $user = User::create([
-            'name' => 'Admin',
-            'email' => 'admin@gmail.com',
-            'password' => bcrypt('password'),
-        ]);
+        $user = User::firstOrCreate(
+            ['email' => 'admin@gmail.com'], 
+            [
+                'name' => 'Admin',
+                'password' => bcrypt('password'),
+            ]
+        );
 
-        $role = Role::find(1);
-
-        $user->assignRole($role);
-
+        if (!$user->hasRole('admin')) {
+            $role = Role::find(1);
+            $user->assignRole($role);
+        }
     }
 }

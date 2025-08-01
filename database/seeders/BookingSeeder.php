@@ -2,20 +2,17 @@
 
 namespace Database\Seeders;
 
+use App\Models\Booking;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
-class RoleSeeder extends Seeder
+class BookingSeeder extends Seeder
 {
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        collect([
-            ['name' => 'admin'],
-            ['name' => 'client']
-        ])->each(fn($data) => Role::firstOrCreate($data));
+        Booking::factory()->count(30)->create();
     }
 }
