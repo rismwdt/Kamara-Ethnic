@@ -18,7 +18,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('image')->nullable();
             $table->integer('duration');
-            $table->enum('type', ['upacara_adat', 'siraman', 'lainnya'])->nullable();
+            $table->enum('type', ['upacara_adat', 'siraman', 'sisingaan', 'lainnya'])->nullable();
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
             $table->timestamps();
         });

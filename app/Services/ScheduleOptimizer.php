@@ -8,27 +8,26 @@ use Carbon\Carbon;
 class ScheduleOptimizer
 {
     public function isAvailable(Carbon $date, $startTime, $endTime, $locationDetail)
-{
-    $bookings = Booking::where('date', $date->toDateString())->get();
+    {
+        $bookings = Booking::where('date', $date->toDateString())->get();
 
-    foreach ($bookings as $booking) {
-        $existingStart = Carbon::parse($booking->start_time);
-        $existingEnd = Carbon::parse($booking->end_time);
-        $newStart = Carbon::parse($startTime);
-        $newEnd = Carbon::parse($endTime);
+        foreach ($bookings as $booking) {
+            $existingStart = Carbon::parse($booking->start_time);
+            $existingEnd = Carbon::parse($booking->end_time);
+            $newStart = Carbon::parse($startTime);
+            $newEnd = Carbon::parse($endTime);
 
-        $overlap = $newStart < $existingEnd && $existingStart < $newEnd;
+            $overlap = $newStart < $existingEnd && $existingStart < $newEnd;
 
-        $normalizedExisting = strtolower(trim($booking->location_detail));
-$normalizedInput = strtolower(trim($locationDetail));
+            $normalizedExisting = strtolower(trim($booking->location_detail));
+            $normalizedInput = strtolower(trim($locationDetail));
 
-if ($overlap && levenshtein($normalizedExisting, $normalizedInput) < 10) {
-    return false;
-}
+            if ($overlap && levenshtein($normalizedExisting, $normalizedInput) < 10) {
+                return false;
+            }
+        }
+        return true;
     }
-
-    return true;
-}
 
     public function canAcceptInDay($date)
     {

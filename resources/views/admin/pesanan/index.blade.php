@@ -69,7 +69,7 @@
             </x-slot>
             @foreach ($bookings as $index => $booking)
             <tr>
-                <td class="px-4 py-2">{{ $index + 1 }}</td>
+                <td class="px-4 py-2">{{ $bookings->firstItem() + $index }}</td>
                 <td class="px-4 py-2">{{ $booking->client_name }}</td>
                 {{-- <td class="px-4 py-2">{{ $booking->phone }}</td> --}}
                 <td class="px-4 py-2">{{ $booking->event->name }}</td>

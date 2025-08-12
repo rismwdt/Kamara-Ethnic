@@ -47,6 +47,12 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(response => response.json())
         .then(data => {
             console.log('Respons:', data);
+            if (data.price) {
+                    const dpElement = document.getElementById('dp_amount');
+                    if (dpElement) {
+                        dpElement.textContent = data.dp.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' });
+                    }
+                }
             if (data.available) {
                 const eventId = form.querySelector('input[name="event_id"]').value;
                 const tanggal = form.querySelector('input[name="date"]').value;
@@ -69,7 +75,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 window._dataPesanan = { eventId, tanggal, mulai, selesai, alamat };
-
                 window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-pesanan' }));
             } else {
                 window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-jadwal-bentrok' }));

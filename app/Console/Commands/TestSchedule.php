@@ -4,14 +4,14 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 
-class MarkBookingsAsFinished extends Command
+class TestSchedule extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'app:mark-bookings-as-finished';
+    protected $signature = 'app:test-schedule';
 
     /**
      * The console command description.
@@ -25,10 +25,7 @@ class MarkBookingsAsFinished extends Command
      */
     public function handle()
     {
-        $updated = \App\Models\Booking::where('status', 'diterima')
-            ->whereDate('date', '<', now())
-            ->update(['status' => 'selesai']);
-
-        $this->info("Berhasil menandai {$updated} pesanan sebagai 'selesai'.");
+         \Log::info('TestSchedule dijalankan pada ' . now());
+    $this->info('TestSchedule dijalankan');
     }
 }

@@ -44,27 +44,28 @@ class DashboardController extends Controller
             ->count('email');
 
         // Tanggal minggu ini (Senin - Minggu)
-        $startOfWeek = now()->startOfWeek();  // default: Senin
-$endOfWeek = now()->endOfWeek();      // default: Minggu
+        $startOfWeek = now()->startOfWeek();
+        $endOfWeek = now()->endOfWeek()->toDateString();
+        $today = now()->toDateString();  
 
-$jadwalMingguIni = $bookings
-    ->whereBetween('date', [$startOfWeek, $endOfWeek])
-    ->sortBy(function ($booking) {
-        return $booking->date . ' ' . $booking->start_time;
-    })
-    ->take(8)
-    ->values();
+        $jadwalMingguIni = $bookings
+            ->whereBetween('date', [$today, $endOfWeek])
+            ->sortBy(function ($booking) {
+                return $booking->date . ' ' . $booking->start_time;
+            })
+            ->take(8)
+            ->values();
 
         // Tanggal di bulan ini yang punya acara
         $tanggalDenganAcara = Booking::whereMonth('date', now()->month)
-    ->selectRaw('date, COUNT(*) as jumlah')
-    ->groupBy('date')
-    ->get()
-    ->mapWithKeys(function ($item) {
-        return [
-            \Carbon\Carbon::parse($item->date)->format('Y-m-d') => $item->jumlah,
-        ];
-    });
+            ->selectRaw('date, COUNT(*) as jumlah')
+            ->groupBy('date')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [
+                    \Carbon\Carbon::parse($item->date)->format('Y-m-d') => $item->jumlah,
+                ];
+            });
 
         return view('dashboard', compact(
             'totalPendapatan',

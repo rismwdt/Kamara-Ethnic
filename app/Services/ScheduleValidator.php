@@ -170,7 +170,7 @@ class ScheduleValidator
     public function isPerformerAvailable($performerId, $date, $start, $end, $excludeBookingId = null)
     {
         return !Booking::where('date', $date)
-        ->when($excludeBookingId, fn($q) => $q->where('id', '!=', $excludeBookingId)) // ⬅️ Tambahan penting!
+        ->when($excludeBookingId, fn($q) => $q->where('id', '!=', $excludeBookingId))
         ->whereIn('status', ['tertunda', 'diterima'])
         ->whereHas('performers', function ($query) use ($performerId) {
             $query->where('performer_id', $performerId);
@@ -378,59 +378,57 @@ class ScheduleValidator
 
 
     public function checkLocationEstimatesBetweenBookings(array $bookings)
-{
-    $missingEstimates = [];
-    $showAddLocationModal = false;
+    {
+        $missingEstimates = [];
+        $showAddLocationModal = false;
 
-    // Ambil kombinasi pasangan lokasi antar booking
-    for ($i = 0; $i < count($bookings); $i++) {
-        for ($j = $i + 1; $j < count($bookings); $j++) {
-            $bookingA = $bookings[$i];
-            $bookingB = $bookings[$j];
+        for ($i = 0; $i < count($bookings); $i++) {
+            for ($j = $i + 1; $j < count($bookings); $j++) {
+                $bookingA = $bookings[$i];
+                $bookingB = $bookings[$j];
 
-            if ($bookingA->location === $bookingB->location) {
-                continue; // lokasi sama, skip
-            }
+                if ($bookingA->location === $bookingB->location) {
+                    continue;
+                }
 
-            $locationA = Location::where('full_address', $bookingA->location)->first();
-            $locationB = Location::where('full_address', $bookingB->location)->first();
+                $locationA = Location::where('full_address', $bookingA->location)->first();
+                $locationB = Location::where('full_address', $bookingB->location)->first();
 
-            if (!$locationA || !$locationB) {
-                $missingEstimates[] = [
-                    'from' => $bookingA->location,
-                    'to' => $bookingB->location,
-                    'reason' => 'lokasi_belum_terdaftar',
-                ];
-                $showAddLocationModal = true;
-                continue;
-            }
+                if (!$locationA || !$locationB) {
+                    $missingEstimates[] = [
+                        'from' => $bookingA->location,
+                        'to' => $bookingB->location,
+                        'reason' => 'lokasi_belum_terdaftar',
+                    ];
+                    $showAddLocationModal = true;
+                    continue;
+                }
 
-            // Cek estimasi dari A ke B dan B ke A (wajib dua-duanya tersedia)
-            $estimateAB = LocationEstimate::where('from_location_id', $locationA->id)
-                ->where('to_location_id', $locationB->id)
-                ->first();
+                $estimateAB = LocationEstimate::where('from_location_id', $locationA->id)
+                    ->where('to_location_id', $locationB->id)
+                    ->first();
 
-            $estimateBA = LocationEstimate::where('from_location_id', $locationB->id)
-                ->where('to_location_id', $locationA->id)
-                ->first();
+                $estimateBA = LocationEstimate::where('from_location_id', $locationB->id)
+                    ->where('to_location_id', $locationA->id)
+                    ->first();
 
-            if (!$estimateAB || !$estimateBA) {
-                $missingEstimates[] = [
-                    'from' => $locationA->full_address,
-                    'to' => $locationB->full_address,
-                    'reason' => 'estimasi_belum_ada',
-                ];
-                $showAddLocationModal = true;
+                if (!$estimateAB || !$estimateBA) {
+                    $missingEstimates[] = [
+                        'from' => $locationA->full_address,
+                        'to' => $locationB->full_address,
+                        'reason' => 'estimasi_belum_ada',
+                    ];
+                    $showAddLocationModal = true;
+                }
             }
         }
+
+        return [$missingEstimates, $showAddLocationModal];
     }
 
-    return [$missingEstimates, $showAddLocationModal];
-}
-
-public static function getAllBookingsOnDate($date)
-{
-    return Booking::where('date', $date)->get();
-}
+    public static function getAllBookingsOnDate($date)
+    {
+        return Booking::where('date', $date)->get();
+    }
 
 }

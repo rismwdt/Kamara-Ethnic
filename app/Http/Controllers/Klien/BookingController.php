@@ -11,13 +11,18 @@ class BookingController extends Controller
 {
     public function store(Request $request)
     {
+        $prefix = 'BK';
+        $datePart = now()->format('ymd');
+        $randomPart = Str::upper(Str::random(2));
+        $bookingCode = $prefix . $datePart . $randomPart;
+
         $imagePath = null;
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store('image', 'public');
         }
 
         $booking = Booking::create([
-            'booking_code'    => Str::random(10),
+            'booking_code'    => $bookingCode,
             'event_id'        => $request->event_id,
             'user_id'         => auth()->id(),
             'date'            => $request->date,

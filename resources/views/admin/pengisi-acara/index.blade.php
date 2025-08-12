@@ -31,7 +31,7 @@
                 </x-slot>
                 @foreach ($performers as $index => $performer)
                 <tr>
-                    <td class="px-4 py-2">{{ $index + 1 }}</td>
+                    <td class="px-4 py-2">{{ $performers->firstItem() + $index }}</td>
                     <td class="px-4 py-2">{{ $performer->name }}</td>
                     <td class="px-4 py-2 capitalize">{{ $performer->gender }}</td>
                     <td class="px-4 py-2 capitalize">{{ $performer->category }}</td>

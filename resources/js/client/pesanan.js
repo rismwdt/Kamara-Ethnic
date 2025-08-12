@@ -6,6 +6,7 @@ window.addEventListener('open-modal', function (e) {
             document.getElementById('date').value = data.tanggal;
             document.getElementById('start_time').value = data.mulai;
             document.getElementById('end_time').value = data.selesai;
+            document.getElementById('dp_amount').textContent = 'Rp ' + response.dp.toLocaleString();
 
             const lokasiTextarea = document.querySelector('#formPesanan textarea[name="location_detail"]');
             if (lokasiTextarea) {

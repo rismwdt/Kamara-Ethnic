@@ -30,11 +30,11 @@
                     </button>
                     @auth
                     <button
-    data-event-id="{{ $event->id }}"
-    class="btnPesanSekarang bg-primary text-white text-lg font-sans font-semibold rounded-lg px-8 py-2 flex items-center justify-center gap-2 hover:bg-[#5a0c0f] hover:text-white transition">
-    Pesan Sekarang
-</button>
-                    @else
+                        data-event-id="{{ $event->id }}"
+                        class="btnPesanSekarang bg-primary text-white text-lg font-sans font-semibold rounded-lg px-8 py-2 flex items-center justify-center gap-2 hover:bg-[#5a0c0f] hover:text-white transition">
+                        Pesan Sekarang
+                    </button>
+                                        @else
                     <a href="{{ route('login') }}"
                         class="bg-primary text-white text-lg font-sans font-semibold rounded-lg px-8 py-2 flex items-center justify-center gap-2 hover:bg-[#5a0c0f] hover:text-white transition">
                         Pesan Sekarang

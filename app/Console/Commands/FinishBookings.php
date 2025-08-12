@@ -26,8 +26,16 @@ class FinishBookings extends Command
      */
     public function handle()
     {
+        \Log::info('bookings:finish command dijalankan pada ' . now());
+
         $updated = Booking::where('status', 'diterima')
-            ->whereDate('date', '<', now())
+            ->where(function($query) {
+                $query->whereDate('date', '<', now()->toDateString())
+                      ->orWhere(function($q) {
+                          $q->whereDate('date', now()->toDateString())
+                            ->whereTime('end_time', '<', now()->toTimeString());
+                      });
+            })
             ->update(['status' => 'selesai']);
 
         $this->info("{$updated} pesanan berhasil diperbarui menjadi selesai.");

@@ -40,7 +40,7 @@
         <x-input-label for="type" value="Jenis Acara" />
         <select id="type" name="type" class="mt-1 block w-full rounded border-gray-300 shadow-sm">
             <option value="">Pilih Jenis Acara</option>
-            @foreach (['siraman', 'upacara_adat', 'lainnya'] as $type)
+            @foreach (['siraman', 'upacara_adat', 'sisingaan', 'lainnya'] as $type)
                 <option value="{{ $type }}" {{ old('type', $event->type) == $type ? 'selected' : '' }}>
                     {{ ucfirst($type) }}
                 </option>

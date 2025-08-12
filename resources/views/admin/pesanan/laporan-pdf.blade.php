@@ -19,11 +19,13 @@
         <thead>
             <tr>
                 <th>No</th>
-                <th>Kode</th>
+                <th>Kode Pesanan</th>
                 <th>Nama Klien</th>
-                <th>Tanggal</th>
+                <th>Tanggal Acara</th>
                 <th>Waktu</th>
+                <th>Paket Acara</th>
                 <th>Lokasi</th>
+                <th>Pengisi Acara</th>
                 <th>Status</th>
             </tr>
         </thead>
@@ -32,10 +34,18 @@
                 <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $booking->booking_code }}</td>
-                    <td>{{ $booking->name_client }}</td>
+                    <td>{{ $booking->client_name }}</td>
                     <td>{{ \Carbon\Carbon::parse($booking->date)->format('d-m-Y') }}</td>
                     <td>{{ $booking->start_time }} - {{ $booking->end_time }}</td>
-                    <td>{{ $booking->location }}</td>
+                    <td>{{ $booking->event->name }}</td>
+                    <td>{{ $booking->location_detail }}</td>
+                    <td>
+                        <ul>
+                            @foreach ($booking->performers as $performer)
+                            <li class="break-words">{{ $performer->name }}</li>
+                            @endforeach
+                        </ul>
+                    </td>
                     <td>{{ ucfirst($booking->status) }}</td>
                 </tr>
             @empty

@@ -28,7 +28,7 @@ class EventController extends Controller
             'description' => 'nullable|string',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'duration' => 'required|integer|min:1',
-            'type' => 'required|in:siraman,upacara_adat,lainnya',
+            'type' => 'required|in:siraman,upacara_adat,sisingaan,lainnya',
             'status' => 'required|in:aktif,nonaktif',
         ]);
 

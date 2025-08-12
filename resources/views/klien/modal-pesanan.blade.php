@@ -11,6 +11,7 @@
         <form id="formJadwal" action="{{ route('cek-jadwal') }}" method="POST">
             @csrf
             <input type="hidden" name="event_id" id="event_id_input">
+            <input type="hidden" id="event_price">
             <div class="flex flex-col lg:flex-row gap-4 mb-4">
                 <div class="w-full lg:w-1/3">
                     <x-input-label for="tanggal" value="Tanggal" />
@@ -50,14 +51,14 @@
         </div>
         <p class="text-gray-700 mb-4">
             Mohon maaf, tanggal dan waktu yang Anda pilih sudah tidak tersedia atau penuh.<br>
-            Silakan pilih hari/tanggal/waktu lain yang tersedia, minimal 2 hari dari hari ini.
+            Silakan pilih hari/tanggal/waktu lain yang tersedia, minimal 3 hari dari hari ini.
         </p>
         <p id="jadwal-bentrok-reason" class="text-sm text-red-600 mt-2"></p>
         <div class="text-right">
             <a href="https://wa.me/6283149299817" target="_blank"
-    class="inline-flex items-center px-4 py-2 bg-primary border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary/90 focus:outline-none focus:ring focus:ring-primary/50 active:bg-primary/80 transition">
-    Konsultasi Jadwal
-</a>
+                class="inline-flex items-center px-4 py-2 bg-primary border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-primary/90 focus:outline-none focus:ring focus:ring-primary/50 active:bg-primary/80 transition">
+                Konsultasi Jadwal
+            </a>
         </div>
     </div>
 </x-modal>
@@ -75,6 +76,7 @@
         <form id="formPesanan" action="{{ route('booking.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <input type="hidden" name="event_id" id="event_id">
+            <input type="hidden" id="event_price">
             <div class="mb-3">
                 <x-text-input name="client_name" placeholder="Nama Pengantin (nama & nama)" class="w-full" required />
             </div>
@@ -102,7 +104,12 @@
             <div class="mb-3">
                 <label class="block text-sm mb-1 font-medium">Upload Bukti Transfer DP</label>
                 <input type="file" name="image"
-                    class="w-full text-sm file:bg-primary file:text-white file:px-4 file:py-1 file:rounded-md file:border-none file:cursor-pointer" required>
+                    class="w-full text-sm border border-gray-300 rounded-md file:bg-primary file:text-white file:px-4 file:py-1 file:rounded-md file:border-none file:cursor-pointer" required>
+                <label class="block text-sm mt-2 mb-1 font-medium">
+                    DP yang harus dibayarkan:
+                    <span id="dp_amount" class="font-semibold">Rp 0</span><br>
+                    NoRek BCA: <span class="font-semibold">7751463093</span> a/n Fitri Fitria
+                </label>
             </div>
             <div class="mb-4">
                 <textarea name="notes" rows="2" placeholder="Catatan"
@@ -123,21 +130,21 @@
     <div class="p-6 relative">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-semibold text-green-600 mb-4 dark:text-gray-100">Pesanan Berhasil!</h2>
-            {{-- <button
-            @click="$dispatch('close-modal', 'modal-berhasil')"
-            class="text-gray-500 hover:text-red-600 text-3xl leading-none">
-            &times;
-        </button> --}}
+            <button
+                @click="$dispatch('close-modal', 'modal-berhasil')"
+                class="text-gray-500 hover:text-red-600 text-3xl leading-none">
+                &times;
+            </button>
         </div>
         <p class="text-gray-700 dark:text-gray-300 mb-4">
-            Terima kasih, pesananmu sudah kami terima dan akan segera kami proses.
-            <!-- Pesanan Anda telah berhasil dibuat. Silakan cek email Anda untuk detail pesanan. -->
+            Terima kasih, pesanan Anda telah kami terima dan akan segera kami proses dalam waktu 1x24 jam.<br>
+            Jika ada pertanyaan, silakan hubungi kami melalui WhatsApp.
         </p>
         <div class="flex justify-end">
-            <button @click="$dispatch('close-modal', 'modal-berhasil')"
-                class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none hover:focus:ring-2 hover:focus:ring-green-500 hover:focus:ring-opacity-50">
-                Tutup
-            </button>
+            <a href="https://wa.me/6283149299817" target="_blank"
+                class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50">
+                Hubungi via WhatsApp
+            </a>
         </div>
     </div>
 </x-modal>

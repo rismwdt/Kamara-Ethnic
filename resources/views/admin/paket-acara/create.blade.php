@@ -46,6 +46,7 @@
                             <option value="">Pilih Jenis Acara</option>
                             <option value="siraman" {{ old('type') == 'siraman' ? 'selected' : '' }}>Siraman</option>
                             <option value="upacara_adat" {{ old('type') == 'upacara_adat' ? 'selected' : '' }}>Upacara Adat</option>
+                            <option value="sisingaan" {{ old('type') == 'sisingaan' ? 'selected' : '' }}>Sisingaan</option>
                             <option value="lainnya" {{ old('type') == 'lainnya' ? 'selected' : '' }}>Lainnya</option>
                         </select>
                         <x-input-error :messages="$errors->get('type')" class="mt-2" />

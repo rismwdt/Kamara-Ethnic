@@ -5,7 +5,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        <title>Kamara Ethnic</title>
+        <link rel="icon" href="{{ asset('img/title.png') }}" type="image/x-icon" class="rounded-full">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">

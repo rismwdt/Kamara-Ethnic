@@ -63,13 +63,13 @@
             <ul class="list-disc ml-5 space-y-1">
                 @foreach ($otherWarnings as $warning)
                 <li>
-                    Performer <strong>{{ $warning['performer'] ?? '-' }}</strong>:
+                    Pengisi Acara <strong>{{ $warning['performer'] ?? '-' }}</strong>:
                     @switch($warning['reason'])
                     @case('waktu_tidak_cukup')
-                    waktu tempuh dari acara sebelumnya tidak cukup.
+                    Waktu tempuh dari acara sebelumnya tidak cukup.
                     @break
                     @case('lokasi_asal_belum_terdaftar')
-                    lokasi asal acara sebelumnya belum terdaftar.
+                    Lokasi asal acara sebelumnya belum terdaftar.
                     @break
                     @default
                     {{ $warning['reason'] }}
@@ -216,7 +216,7 @@
             <div class="flex flex-col lg:flex-row-reverse gap-6">
                 @if($rekomendasi->isNotEmpty())
                 <div class="lg:w-1/3 bg-green-100 border-l-4 border-green-500 text-green-800 p-4 rounded h-fit">
-                    <strong>Rekomendasi Performer:</strong>
+                    <strong>Rekomendasi Pengisi Acara:</strong>
                     <ul class="list-disc ml-5 mt-1">
                         @foreach ($rekomendasi as $p)
                         <li>{{ $p->name }} <span class="text-sm text-gray-500">({{ $p->category }})</span></li>
@@ -256,7 +256,7 @@
                                     <span>{{ $performer->name }}</span>
                                 </label>
                                 @empty
-                                <p class="text-sm text-gray-500 italic">Belum ada performer.</p>
+                                <p class="text-sm text-gray-500 italic">Belum ada Pengisi Acara.</p>
                                 @endforelse
                             </div>
                         </div>
