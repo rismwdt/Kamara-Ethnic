@@ -1,6 +1,66 @@
 console.log("jadwal.js loaded");
 
 document.addEventListener('DOMContentLoaded', function () {
+    let map, marker;
+    let userLat = null;
+    let userLon = null;
+
+    const locationInput = document.getElementById('location_detail');
+    const suggestions = document.getElementById('suggestions');
+
+    // Ambil lokasi pengguna (jika diizinkan)
+    // if (navigator.geolocation) {
+    //     navigator.geolocation.getCurrentPosition(pos => {
+    //         userLat = pos.coords.latitude;
+    //         userLon = pos.coords.longitude;
+    //         console.log("Lokasi pengguna:", userLat, userLon);
+    //     }, err => {
+    //         console.warn("Gagal ambil lokasi:", err);
+    //     });
+    // }
+
+    // Fungsi pasang marker + isi lat/lon di form
+    function setMarker(lat, lon) {
+        if (marker) {
+            marker.setLatLng([lat, lon]);
+        } else {
+            marker = L.marker([lat, lon]).addTo(map);
+        }
+        document.getElementById('latitude').value = lat;
+        document.getElementById('longitude').value = lon;
+    }
+
+    // Autocomplete alamat dari Nominatim (Indonesia saja & dekat lokasi user)
+    locationInput.addEventListener('input', function () {
+        let query = this.value;
+        if (query.length < 3) {
+            suggestions.innerHTML = '';
+            return;
+        }
+
+        let url = `/api/nominatim?q=${encodeURIComponent(query)}`;
+
+        fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                suggestions.innerHTML = '';
+                data.forEach(place => {
+                    const li = document.createElement('li');
+                    li.textContent = place.display_name;
+                    li.style.cursor = 'pointer';
+                    li.onclick = () => {
+                        locationInput.value = place.display_name;
+                        setMarker(place.lat, place.lon);
+                        map.setView([place.lat, place.lon], 15);
+                        suggestions.innerHTML = '';
+                    };
+                    suggestions.appendChild(li);
+                });
+            })
+            .catch(err => console.warn("Gagal ambil lokasi:", err));
+    });
+
+    // Buka modal jadwal
     document.querySelectorAll('.btnPesanSekarang').forEach(button => {
         button.addEventListener('click', () => {
             const eventId = button.dataset.eventId;
@@ -14,12 +74,26 @@ document.addEventListener('DOMContentLoaded', function () {
             if (inputJadwal) inputJadwal.value = eventId;
             if (inputPesanan) inputPesanan.value = eventId;
 
+            // Tampilkan peta saat modal dibuka
+            setTimeout(() => {
+                if (!map) {
+                    map = L.map('map').setView([-6.200000, 106.816666], 12);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors'
+                    }).addTo(map);
+
+                    // Klik peta → set marker
+                    map.on('click', function (e) {
+                        setMarker(e.latlng.lat, e.latlng.lng);
+                    });
+                }
+            }, 300);
+
             window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-jadwal' }));
         });
     });
-});
 
-document.addEventListener('DOMContentLoaded', function () {
+    // Tombol cek jadwal
     document.getElementById('cek-jadwal-button').addEventListener('click', function (e) {
         e.preventDefault();
         const form = document.getElementById('formJadwal');
@@ -30,11 +104,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const formData = new FormData(form);
-
-        console.log("Data dikirim:");
-        for (let [key, value] of formData.entries()) {
-            console.log(`${key}: ${value}`);
-        }
 
         fetch(form.action, {
             method: 'POST',
@@ -47,34 +116,17 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(response => response.json())
         .then(data => {
             console.log('Respons:', data);
-            if (data.price) {
-                    const dpElement = document.getElementById('dp_amount');
-                    if (dpElement) {
-                        dpElement.textContent = data.dp.toLocaleString('id-ID', { style: 'currency', currency: 'IDR' });
-                    }
-                }
             if (data.available) {
-                const eventId = form.querySelector('input[name="event_id"]').value;
-                const tanggal = form.querySelector('input[name="date"]').value;
-                const mulai   = form.querySelector('input[name="start_time"]').value;
-                const selesai = form.querySelector('input[name="end_time"]').value;
-                const alamat  = form.querySelector('#alamat')?.value ?? '';
-
                 const formPesanan = document.getElementById('formPesanan');
                 if (formPesanan) {
-                    const locationInput = formPesanan.querySelector('textarea[name="location_detail"]');
-                    console.log("Field lokasi ditemukan:", locationInput);
-
-                    formPesanan.querySelector('input[name="event_id"]').value = eventId;
-                    formPesanan.querySelector('input[name="date"]').value = tanggal;
-                    formPesanan.querySelector('input[name="start_time"]').value = mulai;
-                    formPesanan.querySelector('input[name="end_time"]').value = selesai;
-                    if (locationInput) {
-                        locationInput.value = alamat;
-                    }
+                    formPesanan.querySelector('input[name="event_id"]').value = formData.get('event_id');
+                    formPesanan.querySelector('input[name="date"]').value = formData.get('date');
+                    formPesanan.querySelector('input[name="start_time"]').value = formData.get('start_time');
+                    formPesanan.querySelector('input[name="end_time"]').value = formData.get('end_time');
+                    formPesanan.querySelector('textarea[name="location_detail"]').value = formData.get('location_detail');
+                    formPesanan.querySelector('input[name="latitude"]').value = formData.get('latitude');
+                    formPesanan.querySelector('input[name="longitude"]').value = formData.get('longitude');
                 }
-
-                window._dataPesanan = { eventId, tanggal, mulai, selesai, alamat };
                 window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-pesanan' }));
             } else {
                 window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-jadwal-bentrok' }));
@@ -86,8 +138,3 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 });
-
-function tutupModalBentrokDanBukaJadwal() {
-    window.dispatchEvent(new CustomEvent('close-modal', { detail: 'modal-jadwal-bentrok' }));
-    window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-jadwal' }));
-}

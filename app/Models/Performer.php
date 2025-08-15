@@ -14,7 +14,8 @@ class Performer extends Model
     protected $fillable = [
         'name',
         'gender',
-        'category',
+        'performer_role_id',
+        'is_active',
         'phone',
         'account_number',
         'bank_name',
@@ -22,9 +23,13 @@ class Performer extends Model
         'notes'
     ];
 
+    public function role()
+    {
+        return $this->belongsTo(PerformerRole::class, 'performer_role_id');
+    }
+
     public function bookings()
     {
         return $this->belongsToMany(Booking::class, 'booking_performers');
     }
-    
 }

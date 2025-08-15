@@ -19,14 +19,18 @@ class Booking extends Model
         'start_time',
         'end_time',
         'location_detail',
+        'latitude',
+        'longitude',
         'client_name',
         'male_parents',
         'female_parents',
         'phone',
         'email',
         'nuance',
+        'location_photo',
         'image',
         'notes',
+        'priority',
         'status'
     ];
 

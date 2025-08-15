@@ -13,20 +13,24 @@ return new class extends Migration
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
-            $table->string('booking_code', 10)->unique();
+            $table->string('booking_code', 15)->unique();
             $table->foreignId('event_id')->constrained()->onDelete('cascade');
             $table->date('date');
             $table->time('start_time');
             $table->time('end_time');
             $table->text('location_detail');
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
             $table->string('client_name');
             $table->string('male_parents')->nullable();
             $table->string('female_parents')->nullable();
             $table->string('phone');
             $table->string('email')->nullable();
             $table->string('nuance')->nullable();
+            $table->string('location_photo')->nullable();
             $table->string('image')->nullable();
             $table->text('notes')->nullable();
+            $table->enum('priority', ['normal', 'keluarga', 'darurat'])->default('normal');
             $table->enum('status', ['tertunda', 'disetujui', 'ditolak'])->default('tertunda');
             $table->timestamps();
         });

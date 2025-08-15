@@ -11,45 +11,63 @@ use Illuminate\Support\Facades\Auth;
 
 class ScheduleController extends Controller
 {
+    protected $optimizer;
+
+    public function __construct(ScheduleOptimizer $optimizer)
+    {
+        $this->optimizer = $optimizer;
+    }
+
     public function checkSchedule(Request $request)
     {
         $request->validate([
             'event_id' => 'required|exists:events,id',
-            'date' => 'required|date|after_or_equal:' . now()->addDays(3)->format('Y-m-d'),
+            'date' => 'required|date|after_or_equal:today',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'required|date_format:H:i|after:start_time',
             'location_detail' => 'required|string',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            // 'priority' => 'required|integer',
         ]);
 
-        $startTime = Carbon::createFromFormat('H:i', $request->start_time)->format('H:i:s');
-        $endTime = Carbon::createFromFormat('H:i', $request->end_time)->format('H:i:s');
-        $date = Carbon::parse($request->date);
+        $date = $request->date;
+        $startTime = $request->start_time;
+        $endTime = $request->end_time;
+        $locationDetail = $request->location_detail;
+        $latitude = $request->latitude;
+        $longitude = $request->longitude;
+        // $priority = $request->priority;
 
-        \Log::info("Cek jadwal | Date: {$request->date}, Start: $startTime, End: $endTime");
-
-        $optimizer = new ScheduleOptimizer();
-
-        if (!$optimizer->canAcceptInDay($date)) {
-            return response()->json([
-                'available' => false,
-                'message' => 'Kuota acara pada hari tersebut sudah penuh (maksimal 5 acara).'
-            ]);
-        }
-
-        $isAvailable = $optimizer->isAvailable(
+        $available = $this->optimizer->checkScheduleAvailability(
             $date,
             $startTime,
             $endTime,
-            $request->location_detail
+            $latitude,
+            $longitude,
+            // $priority
         );
 
-        $event = Event::find($request->event_id);
-
         return response()->json([
-            'available' => $isAvailable,
-            'message'   => $isAvailable ? 'Tersedia' : 'Jadwal sudah penuh atau bentrok.',
-            'price'     => $event?->price,
-            'dp'        => $event ? ceil($event->price * 0.5) : null,
+            'available' => $available['available'],
+            'message' => $available['message'],
         ]);
+
+        $eventDate = Carbon::parse($request->date);
+        $daysDiff = now()->diffInDays($eventDate, false);
+
+        if ($daysDiff < 3) {
+            $priority = 'darurat';
+            // Munculkan pesan ke user (hanya di frontend):
+            // "Pemesanan sebaiknya dilakukan minimal H-3 sebelum acara. Jika kondisi Anda darurat dan tidak memiliki opsi lain, apakah tetap ingin melanjutkan?"
+        } else {
+            $priority = 'normal';
+        }
+
+        $booking = Booking::create([
+            // field lain...
+            'priority' => $priority
+        ]);
+
     }
 }

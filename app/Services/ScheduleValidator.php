@@ -3,432 +3,194 @@
 namespace App\Services;
 
 use App\Models\Booking;
-use App\Models\Location;
-use App\Models\Performer;
-use Illuminate\Support\Str;
-use App\Models\LocationEstimate;
 
 class ScheduleValidator
 {
-    protected $bookings;
-    protected $estimates;
-
-    public function __construct()
+    /**
+     * Cek ketersediaan (boolean) – dipakai mesin penjadwalan.
+     */
+    public function isPerformerAvailable($performer, $booking, $requirement = null): bool
     {
-        $this->bookings = Booking::whereIn('status', ['accepted', 'pending'])->get();
-        $this->estimates = LocationEstimate::all();
-    }
+        // 0) Hindari membandingkan dengan booking yang sama (saat edit)
+        $excludeId = isset($booking->id) ? $booking->id : null;
 
-    public function validate(Booking $booking)
-    {
-        $missingEstimates = [];
-        $showAddLocationModal = false;
-        $locations = Location::all();
-        $bookingLocationAddress = $booking->location_detail;
-        $toLocation = $locations->first(fn($loc) => $loc->full_address === $bookingLocationAddress);
+        // 1) Cek bentrok jadwal (overlap) – rumus KETAT (back-to-back boleh)
+        $conflict = Booking::whereHas('performers', function ($q) use ($performer) {
+                $q->whereKey($performer->id);
+            })
+            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->whereDate('date', $booking->date)
+            ->where(function ($q) use ($booking) {
+                $q->where('start_time', '<',  $booking->end_time)
+                  ->where('end_time',   '>',  $booking->start_time);
+            })
+            ->exists();
 
-        $alamatList = Booking::whereNotNull('location_detail')
-            ->select('location_detail')
-            ->distinct()
-            ->orderBy('location_detail')
-            ->pluck('location_detail');
-
-        if (!$toLocation) {
-            $missingEstimates[] = [
-                'from' => '-',
-                'to' => $bookingLocationAddress,
-                'from_id' => null,
-                'to_id' => null,
-                'performer' => null,
-                'reason' => 'lokasi_belum_terdaftar'
-            ];
-            $showAddLocationModal = true;
-            return [$missingEstimates, $showAddLocationModal, $alamatList];
+        if ($conflict) {
+            return false;
         }
 
-        foreach ($booking->performers as $performer) {
-            $countBookingsToday = $performer->bookings()
-                ->whereDate('bookings.date', $booking->date)
-                ->count();
+        // 2) Cek jeda perjalanan + buffer dinamis (dua arah)
+        $bookingsToday = Booking::whereHas('performers', function ($q) use ($performer) {
+                $q->whereKey($performer->id);
+            })
+            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->whereDate('date', $booking->date)
+            ->get(['id','start_time','end_time','latitude','longitude']);
 
-            if ($countBookingsToday >= 5) {
-                $missingEstimates[] = [
-                    'from' => '-',
-                    'to' => $toLocation->full_address,
-                    'from_id' => null,
-                    'to_id' => $toLocation->id,
-                    'performer' => $performer->name,
-                    'reason' => 'melebihi_batas_per_hari',
-                ];
-                continue;
+        $latNew = $booking->latitude ?? null;
+        $lonNew = $booking->longitude ?? null;
+
+        $MIN_STATIC_BUFFER = 10; // menit, jika tidak ada koordinat
+
+        foreach ($bookingsToday as $b) {
+            $hasCoords = !is_null($latNew) && !is_null($lonNew) && !is_null($b->latitude) && !is_null($b->longitude);
+            $distance  = $hasCoords
+                ? $this->calculateDistanceKm($latNew, $lonNew, $b->latitude, $b->longitude)
+                : 0.0;
+
+            $travelTime = $this->estimateTravelTimeMinutes($distance, 15);
+            $buffer     = $hasCoords ? $this->dynamicBufferMinutes($distance) : $MIN_STATIC_BUFFER;
+
+            $newStart = strtotime($booking->start_time);
+            $newEnd   = strtotime($booking->end_time);
+            $bStart   = strtotime($b->start_time);
+            $bEnd     = strtotime($b->end_time);
+
+            // i) b berakhir sebelum new mulai → perlu jeda sebelum new.start
+            if ($bEnd <= $newStart) {
+                $gap = (int) round(($newStart - $bEnd) / 60);
+                if ($gap < ($travelTime + $buffer)) {
+                    return false;
+                }
             }
 
-            $previousBooking = $performer->bookings()
-                ->whereDate('bookings.date', $booking->date)
-                ->where('bookings.id', '<>', $booking->id)
-                ->where('bookings.end_time', '<', $booking->start_time)
-                ->orderByDesc('bookings.end_time')
-                ->first();
-
-            if ($previousBooking) {
-                $fromLocation = $locations->first(fn($loc) => $loc->full_address === $previousBooking->location_detail);
-
-                if (!$fromLocation) {
-                    $missingEstimates[] = [
-                        'from' => $previousBooking->location_detail,
-                        'to' => $toLocation->full_address,
-                        'from_id' => null,
-                        'to_id' => $toLocation->id,
-                        'performer' => $performer->name,
-                        'reason' => 'lokasi_asal_belum_terdaftar'
-                    ];
-                    continue;
+            // ii) b mulai setelah new berakhir → perlu jeda setelah new.end
+            if ($newEnd <= $bStart) {
+                $gap = (int) round(($bStart - $newEnd) / 60);
+                if ($gap < ($travelTime + $buffer)) {
+                    return false;
                 }
-
-                $estimate = LocationEstimate::where('from_location_id', $fromLocation->id)
-                    ->where('to_location_id', $toLocation->id)
-                    ->first();
-
-                if (!$estimate) {
-                    $missingEstimates[] = [
-                        'from' => $fromLocation->full_address,
-                        'to' => $toLocation->full_address,
-                        'from_id' => $fromLocation->id,
-                        'to_id' => $toLocation->id,
-                        'performer' => $performer->name,
-                        'reason' => 'estimasi_belum_ada'
-                    ];
-                    continue;
-                }
-
-                $gap = strtotime($booking->start_time) - strtotime($previousBooking->end_time);
-                if ($gap < ($estimate->duration * 60)) {
-                    $missingEstimates[] = [
-                        'from' => $fromLocation->full_address,
-                        'to' => $toLocation->full_address,
-                        'from_id' => $fromLocation->id,
-                        'to_id' => $toLocation->id,
-                        'performer' => $performer->name,
-                        'reason' => 'waktu_tidak_cukup'
-                    ];
-                }
-            } else {
-                $anyEstimateToLocation = LocationEstimate::where('to_location_id', $toLocation->id)->exists();
-
-                $reason = !$anyEstimateToLocation
-                    ? 'tidak_ada_acara_dan_estimasi'
-                    : 'tidak_ada_acara_sebelumnya';
-
-                $missingEstimates[] = [
-                    'from' => '-',
-                    'to' => $toLocation->full_address,
-                    'from_id' => null,
-                    'to_id' => $toLocation->id,
-                    'performer' => $performer->name,
-                    'reason' => $reason,
-                ];
             }
+            // Jika tidak termasuk i/ii, berarti overlap dan sudah ditangani di langkah 1.
         }
 
-        return [$missingEstimates, $showAddLocationModal, $alamatList];
-    }
-
-    public function checkLocationEstimates(Booking $booking, array $performerIds): array
-    {
-        $booking->load('performers');
-
-        $booking->setRelation('performers', $booking->performers->whereIn('id', $performerIds));
-
-        [$missingEstimates, $showAddLocationModal, ] = $this->validate($booking);
-
-        return [$missingEstimates, $showAddLocationModal];
-    }
-
-    public function checkScheduleConflicts(Booking $booking, array $performerIds): bool
-    {
-        foreach ($performerIds as $performerId) {
-            $performer = \App\Models\Performer::find($performerId);
-
-            $conflict = $performer->bookings()
-                ->where('bookings.id', '!=', $booking->id)
-                ->whereDate('bookings.date', $booking->date)
-                ->where(function ($query) use ($booking) {
-                    $query->whereBetween('start_time', [$booking->start_time, $booking->end_time])
-                        ->orWhereBetween('end_time', [$booking->start_time, $booking->end_time])
-                        ->orWhere(function ($q) use ($booking) {
-                            $q->where('start_time', '<=', $booking->start_time)
-                            ->where('end_time', '>=', $booking->end_time);
-                        });
-                })->exists();
-
-            if ($conflict) return false;
-        }
-
+        // 3) Lolos semua cek
         return true;
     }
 
-    public function isPerformerAvailable($performerId, $date, $start, $end, $excludeBookingId = null)
+    /**
+     * Versi detail untuk API – mengembalikan array berisi available + reason.
+     */
+    public function getAvailabilityDetail($performer, $booking, $requirement = null): array
     {
-        return !Booking::where('date', $date)
-        ->when($excludeBookingId, fn($q) => $q->where('id', '!=', $excludeBookingId))
-        ->whereIn('status', ['tertunda', 'diterima'])
-        ->whereHas('performers', function ($query) use ($performerId) {
-            $query->where('performer_id', $performerId);
-        })
-        ->where(function ($query) use ($start, $end) {
-            $query->whereBetween('start_time', [$start, $end])
-                ->orWhereBetween('end_time', [$start, $end])
-                ->orWhere(function ($q) use ($start, $end) {
-                    $q->where('start_time', '<=', $start)
-                    ->where('end_time', '>=', $end);
-                });
-        })
-        ->exists();
-    }
+        // Ulangi cek agar bisa beri alasan yang spesifik.
+        $excludeId = isset($booking->id) ? $booking->id : null;
 
-    public function getPerformerRecommendations(Booking $booking)
-    {
-        $validator = $this;
-        $recommendations = [];
-
-        $performersByRole = Performer::where('status', 'aktif')
-            ->whereNotNull('category')
-            ->where('category', '!=', '')
-            ->get()
-            ->groupBy('category');
-
-        foreach ($performersByRole as $category => $performers) {
-            $recommendations[$category] = $performers
-                ->filter(function ($performer) use ($booking, $validator) {
-                    $available = $validator->isPerformerAvailable(
-                        $performer->id,
-                        $booking->date,
-                        $booking->start_time,
-                        $booking->end_time,
-                        $booking->id
-                    );
-
-                    if (!$available) {
-                        logger("Performer TIDAK tersedia: {$performer->name} [{$performer->category}]");
-                        return false;
-                    }
-
-                    $hasEstimate = $validator->hasLocationEstimate($performer, $booking);
-                    if (!$hasEstimate) {
-                        logger("Performer TIDAK punya estimasi lokasi: {$performer->name} [{$performer->category}]");
-                        return false;
-                    }
-
-                    logger("Performer LOLOS: {$performer->name} [{$performer->category}]");
-                    return true;
-                })
-                ->sortBy(function ($performer) use ($booking, $validator) {
-                    return $validator->estimateTravelTime($performer, $booking);
-                })
-                ->values();
-        }
-
-        return $recommendations;
-    }
-
-
-    public function hasLocationEstimate($performer, Booking $booking): bool
-    {
-        $locations = Location::all();
-
-        $fromBooking = $performer->bookings()
-            ->whereDate('bookings.date', $booking->date)
-            ->where('bookings.id', '<>', $booking->id)
-            ->where('end_time', '<', $booking->start_time)
-            ->orderByDesc('end_time')
-            ->first();
-
-        if (!$fromBooking) {
-            return true;
-        }
-
-        $fromLocation = $locations->first(function ($loc) use ($fromBooking) {
-            return Str::of($loc->full_address)->lower()->trim()
-                == Str::of($fromBooking->location_detail)->lower()->trim();
-        });
-
-        $toLocation = $locations->first(function ($loc) use ($booking) {
-            return Str::of($loc->full_address)->lower()->trim()
-                == Str::of($booking->location_detail)->lower()->trim();
-        });
-
-        if (!$fromLocation || !$toLocation) return false;
-
-        return LocationEstimate::where('from_location_id', $fromLocation->id)
-            ->where('to_location_id', $toLocation->id)
-            ->exists()
-            || LocationEstimate::where('from_location_id', $toLocation->id)
-            ->where('to_location_id', $fromLocation->id)
-            ->exists();
-    }
-
-    public function estimateTravelTime($performer, Booking $booking): int
-    {
-        $locations = Location::all();
-        $fromBooking = $performer->bookings()
-            ->whereDate('bookings.date', $booking->date)
-            ->where('bookings.id', '<>', $booking->id)
-            ->where('end_time', '<', $booking->start_time)
-            ->orderByDesc('end_time')
-            ->first();
-        if (!$fromBooking) return PHP_INT_MAX;
-        $fromLocation = $locations->first(fn($loc) => $loc->full_address === $fromBooking->location_detail);
-        $toLocation = $locations->first(fn($loc) => $loc->full_address === $booking->location_detail);
-        if (!$fromLocation || !$toLocation) return PHP_INT_MAX;
-        $estimate = LocationEstimate::where('from_location_id', $fromLocation->id)
-            ->where('to_location_id', $toLocation->id)
-            ->first();
-        return $estimate?->duration ?? PHP_INT_MAX;
-    }
-
-    public function hasPerformerConflict(Booking $booking): bool
-    {
-        foreach ($booking->performers as $performer) {
-            $conflict = Booking::whereHas('performers', function ($q) use ($performer) {
-                $q->where('performer_id', $performer->id);
+        $overlap = Booking::whereHas('performers', function ($q) use ($performer) {
+                $q->whereKey($performer->id);
             })
-            ->where('id', '!=', $booking->id)
-            ->where('date', $booking->date)
+            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->whereDate('date', $booking->date)
             ->where(function ($q) use ($booking) {
-                $q->whereBetween('start_time', [$booking->start_time, $booking->end_time])
-                  ->orWhereBetween('end_time', [$booking->start_time, $booking->end_time])
-                  ->orWhere(function ($q) use ($booking) {
-                      $q->where('start_time', '<=', $booking->start_time)
-                        ->where('end_time', '>=', $booking->end_time);
-                  });
+                $q->where('start_time', '<',  $booking->end_time)
+                  ->where('end_time',   '>',  $booking->start_time);
             })
             ->exists();
 
-            if ($conflict) return true;
+        if ($overlap) {
+            return [
+                'available' => false,
+                'reason'    => 'Performer sudah punya jadwal yang tumpang tindih pada jam tersebut.'
+            ];
         }
 
-        return false;
-    }
+        $bookingsToday = Booking::whereHas('performers', function ($q) use ($performer) {
+                $q->whereKey($performer->id);
+            })
+            ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
+            ->whereDate('date', $booking->date)
+            ->get(['id','start_time','end_time','latitude','longitude']);
 
-    public function hasMissingLocationEstimate(Booking $booking): bool
-    {
-        $locations = Location::all();
+        $latNew = $booking->latitude ?? null;
+        $lonNew = $booking->longitude ?? null;
+        $MIN_STATIC_BUFFER = 10;
 
-        $toLocation = $locations->first(fn($loc) => $loc->full_address === $booking->location_detail);
-        if (!$toLocation) {
-            return true;
-        }
+        foreach ($bookingsToday as $b) {
+            $hasCoords = !is_null($latNew) && !is_null($lonNew) && !is_null($b->latitude) && !is_null($b->longitude);
+            $distance  = $hasCoords
+                ? $this->calculateDistanceKm($latNew, $lonNew, $b->latitude, $b->longitude)
+                : 0.0;
 
-        foreach ($booking->performers as $performer) {
-            $previousBooking = $performer->bookings()
-                ->whereDate('bookings.date', $booking->date)
-                ->where('bookings.id', '<>', $booking->id)
-                ->where('bookings.end_time', '<', $booking->start_time)
-                ->orderByDesc('bookings.end_time')
-                ->first();
+            $travelTime = $this->estimateTravelTimeMinutes($distance, 15);
+            $buffer     = $hasCoords ? $this->dynamicBufferMinutes($distance) : $MIN_STATIC_BUFFER;
 
-            if ($previousBooking) {
-                $fromLocation = $locations->first(fn($loc) => $loc->full_address === $previousBooking->location_detail);
+            $newStart = strtotime($booking->start_time);
+            $newEnd   = strtotime($booking->end_time);
+            $bStart   = strtotime($b->start_time);
+            $bEnd     = strtotime($b->end_time);
 
-                if (!$fromLocation) {
-                    return true;
+            if ($bEnd <= $newStart) {
+                $gap = (int) round(($newStart - $bEnd) / 60);
+                if ($gap < ($travelTime + $buffer)) {
+                    return [
+                        'available' => false,
+                        'reason'    => "Jeda sebelum acara tidak cukup. Perlu " . round($travelTime) . " menit perjalanan + buffer {$buffer} menit (jarak ~" . round($distance, 2) . " km), tersedia {$gap} menit."
+                    ];
                 }
+            }
 
-                $estimate = LocationEstimate::where('from_location_id', $fromLocation->id)
-                    ->where('to_location_id', $toLocation->id)
-                    ->first();
-
-                if (!$estimate) {
-                    return true;
-                }
-
-                $gap = strtotime($booking->start_time) - strtotime($previousBooking->end_time);
-                if ($gap < ($estimate->duration * 60)) {
-                    return true;
+            if ($newEnd <= $bStart) {
+                $gap = (int) round(($bStart - $newEnd) / 60);
+                if ($gap < ($travelTime + $buffer)) {
+                    return [
+                        'available' => false,
+                        'reason'    => "Jeda setelah acara tidak cukup. Perlu " . round($travelTime) . " menit perjalanan + buffer {$buffer} menit (jarak ~" . round($distance, 2) . " km), tersedia {$gap} menit."
+                    ];
                 }
             }
         }
 
-        return false;
+        return [
+            'available' => true,
+            'reason'    => 'Performer tersedia untuk jadwal ini.'
+        ];
     }
 
-    public function canPerformerTakeMoreEvents($performerId, $date, $bookingId = null)
+    private function calculateDistanceKm($lat1, $lon1, $lat2, $lon2)
     {
-        return Booking::whereDate('bookings.date', $date)
-            ->whereHas('performers', fn($q) => $q->where('performers.id', $performerId))
-            ->when($bookingId, fn($q) => $q->where('bookings.id', '!=', $bookingId))
-            ->count() < 2;
+        $earthRadius = 6371;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) ** 2 +
+             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
+             sin($dLon / 2) ** 2;
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return $earthRadius * $c;
     }
 
-    public function getEventCountForPerformer($performerId, $date, $bookingId = null)
+    private function estimateTravelTimeMinutes($distanceKm, $speedKmH = 25)
     {
-        return Booking::whereDate('bookings.date', $date)
-            ->whereHas('performers', fn($q) => $q->where('performers.id', $performerId))
-            ->when($bookingId, fn($q) => $q->where('bookings.id', '!=', $bookingId))
-            ->count();
+        // Faktor koreksi jalur tidak lurus
+        $correctionFactor = 1.35;
+        return ($distanceKm * $correctionFactor / $speedKmH) * 60;
     }
 
-    public function getBookingsForPerformer($performerId, $date, $bookingId = null)
+    private function dynamicBufferMinutes($distanceKm)
     {
-        return Booking::whereDate('bookings.date', $date)
-            ->whereHas('performers', fn($q) => $q->where('performers.id', $performerId))
-            ->when($bookingId, fn($q) => $q->where('bookings.id', '!=', $bookingId))
-            ->get();
+        if ($distanceKm <= 1) return 10;  // dekat, buffer kecil
+        if ($distanceKm <= 5) return 20;  // sedang
+        return 30;                        // jauh
     }
 
-
-    public function checkLocationEstimatesBetweenBookings(array $bookings)
+    public function debugDistanceAndTime($lat1, $lon1, $lat2, $lon2, $speed = 15)
     {
-        $missingEstimates = [];
-        $showAddLocationModal = false;
+        $distance = $this->calculateDistanceKm($lat1, $lon1, $lat2, $lon2);
+        $travelTime = $this->estimateTravelTimeMinutes($distance, $speed);
 
-        for ($i = 0; $i < count($bookings); $i++) {
-            for ($j = $i + 1; $j < count($bookings); $j++) {
-                $bookingA = $bookings[$i];
-                $bookingB = $bookings[$j];
-
-                if ($bookingA->location === $bookingB->location) {
-                    continue;
-                }
-
-                $locationA = Location::where('full_address', $bookingA->location)->first();
-                $locationB = Location::where('full_address', $bookingB->location)->first();
-
-                if (!$locationA || !$locationB) {
-                    $missingEstimates[] = [
-                        'from' => $bookingA->location,
-                        'to' => $bookingB->location,
-                        'reason' => 'lokasi_belum_terdaftar',
-                    ];
-                    $showAddLocationModal = true;
-                    continue;
-                }
-
-                $estimateAB = LocationEstimate::where('from_location_id', $locationA->id)
-                    ->where('to_location_id', $locationB->id)
-                    ->first();
-
-                $estimateBA = LocationEstimate::where('from_location_id', $locationB->id)
-                    ->where('to_location_id', $locationA->id)
-                    ->first();
-
-                if (!$estimateAB || !$estimateBA) {
-                    $missingEstimates[] = [
-                        'from' => $locationA->full_address,
-                        'to' => $locationB->full_address,
-                        'reason' => 'estimasi_belum_ada',
-                    ];
-                    $showAddLocationModal = true;
-                }
-            }
-        }
-
-        return [$missingEstimates, $showAddLocationModal];
+        return [
+            'distance_km'      => round($distance, 2),
+            'travel_time_min'  => round($travelTime, 1)
+        ];
     }
-
-    public static function getAllBookingsOnDate($date)
-    {
-        return Booking::where('date', $date)->get();
-    }
-
 }

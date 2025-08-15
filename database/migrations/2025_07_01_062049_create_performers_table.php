@@ -15,11 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->enum('gender', ['laki-laki', 'perempuan', 'lainnya'])->nullable();
-            $table->string('category')->nullable();
+            $table->foreignId('performer_role_id')->constrained('performer_roles')->onDelete('cascade'); // relasi ke tabel peran
+            $table->boolean('is_active')->default(true);
             $table->string('phone')->nullable();
             $table->string('account_number')->nullable();
             $table->string('bank_name')->nullable();
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
+            $table->integer('experience')->default(0);
             $table->text('notes')->nullable();
             $table->timestamps();
         });

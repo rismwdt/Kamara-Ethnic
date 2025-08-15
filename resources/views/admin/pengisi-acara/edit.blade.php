@@ -37,10 +37,16 @@
                         <x-input-error :messages="$errors->get('gender')" class="mt-2" />
                     </div>
                     <div>
-                        <x-input-label for="category" value="Peran" />
-                        <x-text-input id="category" name="category" type="text" class="mt-1 block w-full"
-                            value="{{ old('name', $performer->category) }}" required />
-                        <x-input-error :messages="$errors->get('category')" class="mt-2" />
+                        <x-input-label for="performer_role_id" value="Peran" />
+                        <select id="performer_role_id" name="performer_role_id" class="form-control mt-1 block w-full rounded border-gray-300 shadow-sm" required>
+                            @foreach($roles as $role)
+                                <option value="{{ $role->id }}"
+                                    {{ old('performer_role_id', $performer->performer_role_id) == $role->id ? 'selected' : '' }}>
+                                    {{ $role->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('performer_role_id')" class="mt-2" />
                     </div>
                     <div class="mt-6">
                         <x-input-label for="notes" value="Catatan" />
@@ -67,6 +73,14 @@
                         <x-text-input id="bank_name" name="bank_name" type="text" class="mt-1 block w-full"
                             value="{{ old('bank_name', $performer->bank_name) }}" />
                         <x-input-error :messages="$errors->get('bank_name')" class="mt-2" />
+                    </div>
+                    <div>
+                        <x-input-label for="is_active" value="Ketersediaan" />
+                        <select id="is_active" name="is_active" class="mt-1 block w-full rounded border-gray-300 shadow-sm" required>
+                            <option value="1" {{ old('is_active', $performer->is_active) == '1' ? 'selected' : '' }}>Ya</option>
+                            <option value="0" {{ old('is_active', $performer->is_active) == '0' ? 'selected' : '' }}>Tidak</option>
+                        </select>
+                        <x-input-error :messages="$errors->get('is_active')" class="mt-2" />
                     </div>
                     <div>
                         <x-input-label for="status" value="Status" />

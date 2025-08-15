@@ -24,6 +24,7 @@
                         <th class="px-4 py-2">Peran</th>
                         <th class="px-4 py-2">No. HP</th>
                         <th class="px-4 py-2">Rekening</th>
+                        <th class="px-4 py-2">Ketersediaan</th>
                         <th class="px-4 py-2">Status</th>
                         <th class="px-4 py-2">Catatan</th>
                         <th class="px-4 py-2">Aksi</th>
@@ -34,7 +35,7 @@
                     <td class="px-4 py-2">{{ $performers->firstItem() + $index }}</td>
                     <td class="px-4 py-2">{{ $performer->name }}</td>
                     <td class="px-4 py-2 capitalize">{{ $performer->gender }}</td>
-                    <td class="px-4 py-2 capitalize">{{ $performer->category }}</td>
+                    <td class="px-4 py-2 capitalize">{{ $performer->role ? $performer->role->name : '-' }}</td>
                     <td class="px-4 py-2">
                         @if ($performer->phone)
                         <a href="https://wa.me/{{ ltrim($performer->phone, '0') }}" target="_blank"
@@ -46,6 +47,9 @@
                         @endif
                     </td>
                     <td class="px-4 py-2">{{ $performer->account_number }} ({{ $performer->bank_name }})</td>
+                    <td class="px-4 py-2">
+                        {{ $performer->is_active ? 'Ya' : 'Tidak' }}
+                    </td>
                     <td class="px-4 py-2">
                         @if ($performer->status === 'aktif')
                         <span class="inline-block bg-green-100 text-green-800 text-sm px-2 py-1 rounded font-medium">

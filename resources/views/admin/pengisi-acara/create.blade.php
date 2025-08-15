@@ -34,9 +34,13 @@
                         <x-input-error :messages="$errors->get('gender')" class="mt-2" />
                     </div>
                     <div>
-                        <x-input-label for="category" value="Peran" />
-                        <x-text-input id="category" name="category" type="text" class="mt-1 block w-full" required value="{{ old('category') }}"/>
-                        <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                        <x-input-label for="performer_role_id" value="Peran" />
+                        <select id="performer_role_id" name="performer_role_id" class="form-control mt-1 block w-full rounded border-gray-300 shadow-sm" required>
+                            @foreach($roles as $role)
+                                <option value="{{ $role->id }}">{{ $role->name }}</option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('performer_role_id')" class="mt-2" />
                     </div>
                 </div>
                 <div class="w-1/2 space-y-4">
@@ -55,14 +59,14 @@
                         <x-text-input id="bank_name" name="bank_name" type="text" class="mt-1 block w-full" />
                         <x-input-error :messages="$errors->get('bank_name')" class="mt-2" />
                     </div>
-                    {{-- <div>
-                        <x-input-label for="available" value="Ketersediaan" />
-                        <select id="available" name="available" class="mt-1 block w-full rounded border-gray-300 shadow-sm" required>
+                    <div>
+                        <x-input-label for="is_active" value="Ketersediaan" />
+                        <select id="is_active" name="is_active" class="mt-1 block w-full rounded border-gray-300 shadow-sm" required>
                             <option value="1">Ya</option>
                             <option value="0">Tidak</option>
                         </select>
-                        <x-input-error :messages="$errors->get('available')" class="mt-2" />
-                    </div> --}}
+                        <x-input-error :messages="$errors->get('is_active')" class="mt-2" />
+                    </div>
                     {{-- <div>
                         <x-input-label for="status" value="Status" />
                         <select id="status" name="status" class="mt-1 block w-full rounded border-gray-300 shadow-sm" required>

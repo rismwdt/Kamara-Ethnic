@@ -60,18 +60,17 @@
                     <tr>
                         <th class="py-2 pr-4 font-medium">Durasi</th>
                         <td>:
-    @if (is_numeric($duration))
-    @if ($duration > 0)
-        {{ floor($duration / 60) > 0 ? floor($duration / 60) . ' jam ' : '' }}
-        {{ $duration % 60 }} menit
-    @else
-        <span class="text-red-600">Waktu tidak valid</span>
-    @endif
-@else
-    <span class="text-gray-500">Durasi belum tersedia</span>
-@endif
-</td>
-
+                            @if (is_numeric($duration))
+                            @if ($duration > 0)
+                                {{ floor($duration / 60) > 0 ? floor($duration / 60) . ' jam ' : '' }}
+                                {{ $duration % 60 }} menit
+                            @else
+                                <span class="text-red-600">Waktu tidak valid</span>
+                            @endif
+                        @else
+                            <span class="text-gray-500">Durasi belum tersedia</span>
+                        @endif
+                        </td>
                     </tr>
                     <tr>
                         <th class="py-2 pr-4 font-medium">Alamat Lengkap</th>
@@ -109,6 +108,16 @@
                             </ul>
                             @else
                             <span class="text-gray-500">Tidak ada</span>
+                            @endif
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="py-2 pr-4 font-medium">Foto Lokasi (Gedung/Rumah)</th>
+                        <td>:
+                            @if($booking->location_photo)
+                            <img src="{{ asset('storage/' . $booking->location_photo) }}" class="w-48 rounded shadow mt-2">
+                            @else
+                            <span class="text-gray-500">Tidak ada gambar</span>
                             @endif
                         </td>
                     </tr>

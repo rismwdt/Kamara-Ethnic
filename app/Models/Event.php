@@ -21,6 +21,11 @@ class Event extends Model
         'status'
     ];
 
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class);
+    }
+    
     public function bookings()
     {
         return $this->hasMany(Booking::class);
