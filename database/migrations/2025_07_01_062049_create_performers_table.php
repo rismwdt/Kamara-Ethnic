@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('account_number')->nullable();
             $table->string('bank_name')->nullable();
             $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
-            $table->integer('experience')->default(0);
+            $table->boolean('is_external')->default(false);
             $table->text('notes')->nullable();
             $table->timestamps();
         });

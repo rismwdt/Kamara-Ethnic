@@ -21,9 +21,7 @@
                     <th class="px-4 py-2">Gambar</th>
                     <th class="px-4 py-2">Nama Paket</th>
                     <th class="px-4 py-2">Jenis</th>
-                    <th class="px-4 py-2">Durasi (jam)</th>
                     <th class="px-4 py-2">Harga</th>
-                    {{-- <th class="px-4 py-2">Pengisi Acara</th> --}}
                     <th class="px-4 py-2">Status</th>
                     <th class="px-4 py-2">Deskripsi</th>
                     <th class="px-4 py-2">Aksi</th>
@@ -42,7 +40,6 @@
                 </td>
                 <td class="px-4 py-2">{{ $event->name }}</td>
                 <td class="px-4 py-2 capitalize">{{ $event->type }}</td>
-                <td class="px-4 py-2">{{ $event->duration }}</td>
                 <td class="px-4 py-2">Rp{{ number_format($event->price, 0, ',', '.') }}</td>
                 <td class="px-4 py-2">
                     @if ($event->status === 'aktif')

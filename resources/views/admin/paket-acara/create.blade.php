@@ -29,18 +29,10 @@
                         <x-text-input id="price" name="price" type="number" step="0.01" class="mt-1 block w-full" required value="{{ old('price') }}"/>
                         <x-input-error :messages="$errors->get('price')" class="mt-2" />
                     </div>
-                    {{-- <div>
-                        <x-input-label for="includes_performer" value="Termasuk Pengisi Acara?" />
-                        <select id="includes_performer" name="includes_performer" class="mt-1 block w-full rounded border-gray-300 shadow-sm">
-                            <option value="1">Ya</option>
-                            <option value="0">Tidak</option>
-                        </select>
-                        <x-input-error :messages="$errors->get('includes_performer')" class="mt-2" />
-                    </div> --}}
                 </div>
             </div>
             <div class="flex gap-x-6 mt-4">
-                    <div class="w-1/3">
+                    <div class="w-1/2">
                         <x-input-label for="type" value="Jenis Acara" />
                         <select id="type" name="type" class="mt-1 block w-full rounded border-gray-300 shadow-sm" required>
                             <option value="">Pilih Jenis Acara</option>
@@ -51,12 +43,7 @@
                         </select>
                         <x-input-error :messages="$errors->get('type')" class="mt-2" />
                     </div>
-                    <div class="w-1/3">
-                        <x-input-label for="duration" value="Estimasi Durasi (jam)" />
-                        <x-text-input id="duration" name="duration" type="number" class="mt-1 block w-full" required value="{{ old('duration') }}"/>
-                        <x-input-error :messages="$errors->get('duration')" class="mt-2" />
-                    </div>
-                    <div class="w-1/3">
+                    <div class="w-1/2">
                         <x-input-label for="status" value="Status" />
                         <select id="status" name="status" class="mt-1 block w-full rounded border-gray-300 shadow-sm" required>
                             <option value="aktif" {{ old('type') == 'aktif' ? 'selected' : '' }}>Aktif</option>

@@ -13,257 +13,84 @@
                 </x-secondary-button>
             </a>
         </div>
-        @if (session('warning'))
-        @php
-        $warnings = collect(session('warning'));
-        $performersNoPrevEvent = $warnings->where('reason', 'tidak_ada_acara_sebelumnya')
-        ->pluck('performer')->unique();
-        $locationWarnings = $warnings
-        ->filter(fn($item) => in_array($item['reason'], ['lokasi_belum_terdaftar', 'estimasi_belum_ada']) &&
-        is_null($item['performer']))
-        ->mapToGroups(fn($item) => [$item['to'] => $item]);
-        @endphp
-        @if ($performersNoPrevEvent->isNotEmpty())
-        <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4">
-            <strong>Info:</strong><br>
-            Performer berikut belum punya acara sebelumnya hari ini:
-            <ul class="list-disc pl-5 mt-1">
-                @foreach ($performersNoPrevEvent as $performer)
-                <li>{{ $performer }}</li>
-                @endforeach
-            </ul>
+
+        {{-- Info ringkas --}}
+        <div class="bg-white shadow rounded-lg p-6 text-gray-800 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Informasi Pesanan</h3>
+            <table class="table-auto w-full text-sm text-left text-gray-700">
+                <tbody class="divide-y divide-gray-200">
+                    <tr><th class="py-2 pr-4 font-medium w-1/3">Paket Acara</th><td>: {{ $booking->event->name }}</td></tr>
+                    <tr><th class="py-2 pr-4 font-medium">Nama Klien</th><td>: {{ $booking->client_name }}</td></tr>
+                    <tr><th class="py-2 pr-4 font-medium">Tanggal</th><td>: {{ \Carbon\Carbon::parse($booking->date)->format('d-m-Y') }}</td></tr>
+                    <tr>
+                        <th class="py-2 pr-4 font-medium">Waktu</th>
+                        <td>: {{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($booking->end_time)->format('H:i') }}</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
-        @endif
-        @foreach ($locationWarnings as $location => $warnings)
-        @php
-        $hasMissingLocation = $warnings->contains('reason', 'lokasi_belum_terdaftar');
-        $hasMissingEstimate = $warnings->contains('reason', 'estimasi_belum_ada');
-        @endphp
-        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
-            <strong>Perhatian:</strong><br>
-            @if ($hasMissingLocation && $hasMissingEstimate)
-            Alamat <strong>{{ $location }}</strong> belum tersedia <em>dan</em> estimasi belum ada.<br>
-            @elseif ($hasMissingLocation)
-            Alamat <strong>{{ $location }}</strong> belum tersedia di database.<br>
-            @elseif ($hasMissingEstimate)
-            Estimasi menuju lokasi <strong>{{ $location }}</strong> belum tersedia.<br>
-            @endif
-            Silakan kelola di menu <a href="{{ route('lokasi-acara.index') }}"
-                class="underline hover:text-blue-900 font-bold">Lokasi</a>.
-        </div>
-        @endforeach
-        @php
-        $otherWarnings = $warnings->reject(fn($w) =>
-        in_array($w['reason'], ['lokasi_belum_terdaftar', 'estimasi_belum_ada']) && is_null($w['performer'])
-        )->reject(fn($w) => $w['reason'] === 'tidak_ada_acara_sebelumnya');
-        @endphp
-        @if ($otherWarnings->isNotEmpty())
-        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6">
-            <p class="font-bold mb-1">Peringatan lainnya:</p>
-            <ul class="list-disc ml-5 space-y-1">
-                @foreach ($otherWarnings as $warning)
-                <li>
-                    Pengisi Acara <strong>{{ $warning['performer'] ?? '-' }}</strong>:
-                    @switch($warning['reason'])
-                    @case('waktu_tidak_cukup')
-                    Waktu tempuh dari acara sebelumnya tidak cukup.
-                    @break
-                    @case('lokasi_asal_belum_terdaftar')
-                    Lokasi asal acara sebelumnya belum terdaftar.
-                    @break
-                    @default
-                    {{ $warning['reason'] }}
-                    @endswitch
-                </li>
-                @endforeach
-            </ul>
-        </div>
-        @endif
-        @endif
+
         <form method="POST" action="{{ route('pesanan.update', $booking->id) }}">
             @csrf
             @method('PUT')
-            <div class="bg-white shadow rounded-lg p-6 text-gray-800 mb-6">
-                <h3 class="text-lg font-semibold mb-4">Informasi Pesanan</h3>
-                <table class="table-auto w-full text-sm text-left text-gray-700">
-                    <tbody class="divide-y divide-gray-200">
-                        <tr>
-                            <th class="py-2 pr-4 font-medium">Paket Acara</th>
-                            <td>: {{ $booking->event->name }}</td>
-                        </tr>
-                        <tr>
-                            <th class="py-2 pr-4 font-medium">Nama Klien</th>
-                            <td>: {{ $booking->client_name }}</td>
-                        </tr>
-                        <tr>
-                            <th class="py-2 pr-4 font-medium">Nuansa Acara</th>
-                            <td>: {{ $booking->nuance }}</td>
-                        </tr>
-                        <tr>
-                            <th class="py-2 pr-4 font-medium">Tanggal</th>
-                            <td>: {{ \Carbon\Carbon::parse($booking->date)->format('d-m-Y') }}</td>
-                        </tr>
-                        <tr>
-                            <th class="py-2 pr-4 font-medium">Waktu</th>
-                            <td>: {{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }} -
-                                {{ \Carbon\Carbon::parse($booking->end_time)->format('H:i') }}</td>
-                        </tr>
-                        <tr>
-                            <th class="py-2 pr-4 font-medium text-left">Status</th>
-                            @php
-                            $statusColor = match($booking->status) {
-                            'tertunda' => 'bg-yellow-100 text-yellow-800',
-                            'diterima' => 'bg-green-100 text-green-800',
-                            'ditolak' => 'bg-red-100 text-red-800',
-                            'selesai' => 'bg-indigo-100 text-indigo-800',
-                            default => 'bg-gray-100 text-gray-800',
-                            };
-                            @endphp
-                            <td>:
-                                <span class="text-xs font-semibold px-2 py-1 rounded {{ $statusColor }}">
-                                    {{ ucfirst($booking->status) }}
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th class="py-2 pr-4 font-medium">Alamat Lengkap</th>
-                            <td>: {{ $booking->location_detail }}</td>
-                        </tr>
-                        {{-- <tr>
-                            <td colspan="2"> --}}
-                        {{-- Group performer yang tidak punya acara sebelumnya --}}
-                        {{-- @php
-                                $performersNoPrevEvent = collect($missingEstimates)
-                                ->where('reason', 'tidak_ada_acara_sebelumnya')
-                                ->pluck('performer')
-                                ->unique();
-                                @endphp
-                                @if ($performersNoPrevEvent->isNotEmpty())
-                                <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4">
-                                    <strong>Info:</strong><br>
-                                    Tidak bisa mengecek estimasi karena performer berikut belum punya acara sebelumnya
-                                    di hari ini:
-                                    <ul class="list-disc pl-5 mt-1">
-                                        @foreach ($performersNoPrevEvent as $performer)
-                                        <li>{{ $performer }}</li>
-                        @endforeach
-                        </ul>
-            </div>
-            @endif --}}
-            {{-- Kelola estimasi yang berkaitan dengan lokasi --}}
-            {{-- @php
-                                $locationWarnings = collect($missingEstimates)
-                                ->filter(function ($item) {
-                                return in_array($item['reason'], ['lokasi_belum_terdaftar', 'estimasi_belum_ada']) &&
-                                $item['performer'] === null;
-                                })
-                                ->mapToGroups(function ($item) {
-                                return [$item['to'] => $item];
-                                });
-                                @endphp
-                                @foreach ($locationWarnings as $location => $warnings)
-                                @php
-                                $hasMissingLocation = $warnings->contains('reason', 'lokasi_belum_terdaftar');
-                                $hasMissingEstimate = $warnings->contains('reason', 'estimasi_belum_ada');
-                                @endphp
-                                @if ($hasMissingLocation && $hasMissingEstimate)
-                                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
-                                    <strong>Perhatian:</strong><br>
-                                    Alamat <strong>{{ $location }}</strong> belum tersedia di database dan estimasi
-            menuju lokasi ini belum tersedia.<br>
-            Silakan tambahkan alamat dan estimasi terlebih dahulu di menu <a href="{{ route('lokasi-acara.index') }}"
-                class="underline hover:text-blue-900 font-bold">Lokasi</a>.
-            </div> --}}
-            {{-- @include('admin.lokasi-acara.modal-tambah-lokasi') --}}
-            {{-- @elseif ($hasMissingLocation)
-                                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
-                                    <strong>Perhatian:</strong><br>
-                                    Alamat <strong>{{ $location }}</strong> belum tersedia di database.<br>
-            Silakan tambahkan alamat terlebih dahulu di menu <a href="{{ route('lokasi-acara.index') }}"
-                class="underline hover:text-blue-900 font-bold">Lokasi</a>. --}}
-            {{-- <div class="mt-2">
-                                        <button
-                                            onclick="document.getElementById('modalTambahLokasi').classList.remove('hidden')"
-                                            class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:outline-none focus:ring focus:ring-blue-300 active:bg-blue-800 transition">
-                                            <i class="fas fa-plus mr-2"></i> Tambah Lokasi
-                                        </button>
-                                    </div> --}}
-            {{-- </div> --}}
-            {{-- @include('admin.lokasi-acara.modal-tambah-lokasi') --}}
-            {{-- @elseif ($hasMissingEstimate)
-                                <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4">
-                                    <strong>Perhatian:</strong><br>
-                                    Estimasi menuju lokasi <strong>{{ $location }}</strong> belum tersedia.<br>
-            Silakan tambahkan estimasi terlebih dahulu di menu <strong>Lokasi</strong>.
-            </div>
-            @endif
-            @endforeach
-            </td>
-            </tr> --}}
-            {{-- <div class="mb-4">
-                            <label for="status">Status Saat Ini</label>
-                            <input type="text" readonly class="form-input bg-gray-100"
-                                value="{{ ucfirst($booking->status) }}">
-            </div> --}}
-            </tbody>
-            </table>
-            </div>
-            {{-- Pengisi Acara --}}
-            @php
-            $rekomendasi = collect($rekomendasi)->flatten(1);
-            $rekomendasi_ids = $rekomendasi->pluck('id')->toArray();
-            @endphp
-            <div class="flex flex-col lg:flex-row-reverse gap-6">
-                @if($rekomendasi->isNotEmpty())
-                <div class="lg:w-1/3 bg-green-100 border-l-4 border-green-500 text-green-800 p-4 rounded h-fit">
-                    <strong>Rekomendasi Pengisi Acara:</strong>
-                    <ul class="list-disc ml-5 mt-1">
-                        @foreach ($rekomendasi as $p)
-                        <li>{{ $p->name }} <span class="text-sm text-gray-500">({{ $p->category }})</span></li>
+
+            @if ($errors->any())
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                    <strong>Terjadi kesalahan:</strong>
+                    <ul class="mt-2 list-disc list-inside">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
                         @endforeach
                     </ul>
                 </div>
-                @endif
-                <div class="lg:w-2/3 bg-white shadow rounded-lg p-6 text-gray-800">
-                    @if ($errors->any())
-                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-                        <strong>Terjadi kesalahan:</strong>
-                        <ul class="mt-2 list-disc list-inside">
-                            @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
+            @endif
+
+            <div class="bg-white shadow rounded-lg p-6 text-gray-800">
+                <h3 class="text-lg font-semibold mb-4">Ubah Status & Prioritas</h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl">
+                    {{-- Status --}}
+                    {{-- <div>
+                        <x-input-label for="status" value="Status" />
+                        @php $statusOld = old('status', $booking->status); @endphp
+                        <select id="status" name="status" class="mt-1 block w-full rounded border-gray-300 shadow-sm">
+                            <option value="">-- Biarkan tanpa perubahan --</option>
+                            <option value="tertunda" {{ $statusOld==='tertunda' ? 'selected' : '' }}>Tertunda</option>
+                            <option value="diterima" {{ $statusOld==='diterima' ? 'selected' : '' }}>Diterima</option>
+                            <option value="ditolak"  {{ $statusOld==='ditolak'  ? 'selected' : '' }}>Ditolak</option>
+                            <option value="selesai"  {{ $statusOld==='selesai'  ? 'selected' : '' }}>Selesai</option>
+                        </select>
+                        <x-input-error :messages="$errors->get('status')" class="mt-2" />
+                    </div> --}}
+
+                    {{-- Prioritas --}}
+                    <div>
+                        <x-input-label for="priority" value="Prioritas" />
+                        @php $pOld = old('priority', $booking->priority ?? 'normal'); @endphp
+                        <select id="priority" name="priority" class="mt-1 block w-full rounded border-gray-300 shadow-sm">
+                            <option value="">-- Biarkan tanpa perubahan --</option>
+                            <option value="normal"  {{ $pOld==='normal'  ? 'selected':'' }}>Normal</option>
+                            <option value="darurat" {{ $pOld==='darurat' ? 'selected':'' }}>Darurat</option>
+                        </select>
+                        <x-input-error :messages="$errors->get('priority')" class="mt-2" />
                     </div>
-                    @endif
-                    <h3 class="text-lg font-semibold mb-4">Pengisi Acara</h3>
-                    <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-6 sm:space-y-0 overflow-x-auto pb-2">
-                        @foreach ($categories as $categoryName => $performersInCategory)
-                        <div class="sm:w-[160px] w-full">
-                            <div class="font-semibold mb-2">
-                                {{ ucfirst($categoryName) }}
-                                <span class="text-sm text-gray-400">({{ count($performersInCategory) }})</span>
-                            </div>
-                            <div class="space-y-2">
-                                @forelse ($performersInCategory as $performer)
-                                @php
-                                $isChecked = $booking->performers->contains($performer->id) || in_array($performer->id,
-                                $rekomendasi_ids);
-                                @endphp
-                                <label class="flex items-center space-x-2">
-                                    <input type="checkbox" name="performer_ids[]" value="{{ $performer->id }}"
-                                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
-                                        {{ $isChecked ? 'checked' : '' }}>
-                                    <span>{{ $performer->name }}</span>
-                                </label>
-                                @empty
-                                <p class="text-sm text-gray-500 italic">Belum ada Pengisi Acara.</p>
-                                @endforelse
-                            </div>
+
+                    {{-- Keluarga / Relasi --}}
+                    <div class="flex items-end">
+                        <div>
+                            <input type="hidden" name="is_family" value="0">
+                            <label class="inline-flex items-center gap-2">
+                                <input type="checkbox" name="is_family" value="1"
+                                       {{ old('is_family', $booking->is_family ? 1 : 0) ? 'checked' : '' }}>
+                                Dari keluarga / relasi
+                            </label>
+                            <x-input-error :messages="$errors->get('is_family')" class="mt-2" />
                         </div>
-                        @endforeach
                     </div>
                 </div>
+
+                <x-primary-button class="mt-6">Simpan</x-primary-button>
             </div>
-            <x-primary-button class="mt-6">Simpan</x-primary-button>
+        </form>
     </main>
 </x-app-layout>

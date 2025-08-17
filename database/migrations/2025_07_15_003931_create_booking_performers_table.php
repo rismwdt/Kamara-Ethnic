@@ -15,6 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('booking_id')->constrained()->onDelete('cascade');
             $table->foreignId('performer_id')->constrained()->onDelete('cascade');
+            $table->boolean('is_external')->default(false);
+            $table->enum('confirmation_status', ['pending','confirmed','declined','cancelled'])
+                    ->default('confirmed');
+            $table->decimal('agreed_rate', 12, 2)->nullable();
             $table->timestamps();
 
             $table->unique(['booking_id', 'performer_id']);

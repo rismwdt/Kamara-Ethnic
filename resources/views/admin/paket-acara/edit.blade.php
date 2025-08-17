@@ -36,7 +36,7 @@
 </div>
 
 <div class="flex gap-x-6 mt-4">
-    <div class="w-1/3">
+    <div class="w-1/2">
         <x-input-label for="type" value="Jenis Acara" />
         <select id="type" name="type" class="mt-1 block w-full rounded border-gray-300 shadow-sm">
             <option value="">Pilih Jenis Acara</option>
@@ -48,13 +48,7 @@
         </select>
         <x-input-error :messages="$errors->get('type')" class="mt-2" />
     </div>
-    <div class="w-1/3">
-        <x-input-label for="duration" value="Estimasi Durasi (jam)" />
-        <x-text-input id="duration" name="duration" type="number" class="mt-1 block w-full"
-            value="{{ old('duration', $event->duration) }}" />
-        <x-input-error :messages="$errors->get('duration')" class="mt-2" />
-    </div>
-    <div class="w-1/3">
+    <div class="w-1/2">
         <x-input-label for="status" value="Status" />
         <select id="status" name="status" class="mt-1 block w-full rounded border-gray-300 shadow-sm">
             <option value="aktif" {{ old('status', $event->status) == 'aktif' ? 'selected' : '' }}>Aktif</option>

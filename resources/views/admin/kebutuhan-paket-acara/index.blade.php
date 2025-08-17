@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Pengaturan Pengisi Acara') }}
+            {{ __('Pengaturan Paket Acara') }}
         </h2>
     </x-slot>
 
@@ -13,7 +13,7 @@
         @endif
 
         <div class="flex justify-between items-center mb-4">
-            <x-add-button href="{{ route('pengaturan-pengisi-acara.create') }}" label="Tambah Pengaturan" />
+            <x-add-button href="{{ route('kebutuhan-paket-acara.create') }}" label="Tambah Pengaturan" />
         </div>
 
         <div class="overflow-x-auto w-full">
@@ -53,18 +53,19 @@
                         </td>
                         <td class="px-4 py-2">
                             <div class="flex space-x-2">
-                                <a href="{{ route('pengaturan-pengisi-acara.edit', $event->id) }}">
+                                <a href="{{ route('kebutuhan-paket-acara.edit', $event->id) }}">
     <x-primary-button class="text-xs px-2 py-1">
         <i class="fas fa-edit"></i>
     </x-primary-button>
 </a>
 
 <x-danger-button type="button"
-    onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'delete-{{ $event->id }}' }))">
+    onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'delete-event-{{ $event->id }}' }))">
     <i class="fas fa-trash"></i>
 </x-danger-button>
-<x-modal-delete name="delete-{{ $event->id }}" :itemId="$event->id"
-    :itemName="$event->name ?? 'Data'" route="pengaturan-pengisi-acara.destroy" />
+
+<x-modal-delete name="delete-event-{{ $event->id }}" :itemId="$event->id"
+    :itemName="$event->name ?? 'Data'" route="kebutuhan-paket-acara.destroy-event" />
 
                             </div>
                         </td>

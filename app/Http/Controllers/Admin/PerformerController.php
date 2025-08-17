@@ -9,7 +9,6 @@ use App\Http\Controllers\Controller;
 
 class PerformerController extends Controller
 {
-
     public function index()
     {
         $performers = Performer::oldest()->paginate(10);
@@ -24,22 +23,24 @@ class PerformerController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'gender' => 'required|in:laki-laki,perempuan,lainnya',
+        // Validasi
+        $data = $request->validate([
+            'name'              => 'required|string|max:255',
+            'gender'            => 'required|in:laki-laki,perempuan,lainnya',
             'performer_role_id' => 'required|exists:performer_roles,id',
-            'is_active' => 'required|boolean',
-            'phone' => 'required|string|max:100',
-            'account_number' => 'nullable|string|max:30',
-            'bank_name' => 'nullable|string|max:50',
-            'notes' => 'nullable|string',
+            'is_active'         => 'required|boolean',
+            'phone'             => 'required|string|max:20',   // ← sinkron DB
+            'account_number'    => 'nullable|string|max:25',   // ← sinkron DB
+            'bank_name'         => 'nullable|string|max:50',
+            'notes'             => 'nullable|string',
+            'is_external'       => 'nullable|boolean',
         ]);
+        $data['is_external'] = $request->boolean('is_external');
+        Performer::create($data);
 
-        $validated['status'] = 'aktif';
-
-        Performer::create($request->all());
-
-        return redirect()->route('pengisi-acara.index')->with('success', 'Pengisi acara berhasil ditambahkan.');
+        return redirect()
+            ->route('pengisi-acara.index')
+            ->with('success', 'Pengisi acara berhasil ditambahkan.');
     }
 
     public function edit(string $id)
@@ -53,22 +54,25 @@ class PerformerController extends Controller
     {
         $performer = Performer::findOrFail($id);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'gender' => 'required|in:laki-laki,perempuan',
+        // Validasi
+        $data = $request->validate([
+            'name'              => 'required|string|max:255',
+            'gender'            => 'required|in:laki-laki,perempuan,lainnya',
             'performer_role_id' => 'required|exists:performer_roles,id',
-            'is_active' => 'required|boolean',
-            'phone' => 'required|string|max:100',
-            'account_number' => 'nullable|string|max:30',
-            'bank_name' => 'nullable|string|max:50',
-            'status' => 'required|in:aktif,nonaktif',
-            'notes' => 'nullable|string',
-            'status' => 'required|in:aktif,nonaktif',
+            'is_active'         => 'required|boolean',
+            'phone'             => 'required|string|max:20',   // ← sinkron DB
+            'account_number'    => 'nullable|string|max:25',   // ← sinkron DB
+            'bank_name'         => 'nullable|string|max:50',
+            'notes'             => 'nullable|string',
+            'is_external'       => 'nullable|boolean',
         ]);
+        $data['is_external'] = $request->boolean('is_external');
 
-        $performer->update($request->all());
+        $performer->update($data);
 
-        return redirect()->route('pengisi-acara.index')->with('success', 'Pengisi acara berhasil diperbarui.');
+        return redirect()
+            ->route('pengisi-acara.index')
+            ->with('success', 'Pengisi acara berhasil diperbarui.');
     }
 
     public function destroy(string $id)
@@ -76,6 +80,8 @@ class PerformerController extends Controller
         $performer = Performer::findOrFail($id);
         $performer->delete();
 
-        return redirect()->route('pengisi-acara.index')->with('success', 'Pengisi acara berhasil dihapus.');
+        return redirect()
+            ->route('pengisi-acara.index')
+            ->with('success', 'Pengisi acara berhasil dihapus.');
     }
 }

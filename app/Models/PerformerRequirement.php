@@ -17,11 +17,18 @@ class PerformerRequirement extends Model
         'notes'
     ];
 
-    public function event() {
-    return $this->belongsTo(Event::class, 'event_id');
+    public function role()
+    {
+        return $this->belongsTo(PerformerRole::class, 'performer_role_id');
     }
 
-    public function performerRole() {
+    public function event()
+    {
+        return $this->belongsTo(Event::class, 'event_id');
+    }
+
+    public function performerRole()
+    {
         return $this->belongsTo(PerformerRole::class, 'performer_role_id');
     }
 }

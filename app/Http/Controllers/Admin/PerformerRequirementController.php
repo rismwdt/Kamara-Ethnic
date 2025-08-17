@@ -26,7 +26,7 @@ class PerformerRequirementController extends Controller
         ['path'=>request()->url(),'query'=>request()->query()]
     );
 
-    return view('admin.pengaturan-pengisi-acara.index', [
+    return view('admin.pengaturan-paket-acara.index', [
         'grouped' => $paginated
     ]);
 }
@@ -35,7 +35,7 @@ class PerformerRequirementController extends Controller
     {
         $events = Event::all();
         $roles = PerformerRole::all();
-        return view('admin.pengaturan-pengisi-acara.create', compact('events', 'roles'));
+        return view('admin.pengaturan-paket-acara.create', compact('events', 'roles'));
     }
 
     public function store(Request $request)
@@ -56,8 +56,8 @@ class PerformerRequirementController extends Controller
             ]);
         }
 
-        return redirect()->route('pengaturan-pengisi-acara.index')
-                         ->with('success', 'Pengaturan pengisi acara berhasil ditambahkan.');
+        return redirect()->route('pengaturan-paket-acara.index')
+                         ->with('success', 'pengaturan-paket acara berhasil ditambahkan.');
     }
 
 public function edit($eventId)
@@ -68,7 +68,7 @@ public function edit($eventId)
 
     $performerRequirements = PerformerRequirement::where('event_id', $eventId)->get();
 
-    return view('admin.pengaturan-pengisi-acara.edit', [
+    return view('admin.pengaturan-paket-acara.edit', [
         'event' => $event,
         'events' => $events,
         'roles' => $roles,
@@ -98,14 +98,21 @@ public function update(Request $request, $event_id)
         ]);
     }
 
-    return redirect()->route('pengaturan-pengisi-acara.index')
-                    ->with('success', 'Pengaturan pengisi acara berhasil diperbarui.');
+    return redirect()->route('pengaturan-paket-acara.index')
+                    ->with('success', 'pengaturan-paket acara berhasil diperbarui.');
 }
 
     public function destroy($id)
     {
         PerformerRequirement::findOrFail($id)->delete();
-        return redirect()->route('admin.pengaturan-pengisi-acara.index')
-                         ->with('success', 'Pengaturan pengisi acara berhasil dihapus.');
+        return redirect()->route('pengaturan-paket-acara.index')
+                         ->with('success', 'Kebutuhan Paket acara berhasil dihapus.');
+    }
+
+    public function destroyByEvent($eventId)
+    {
+        PerformerRequirement::where('event_id', $eventId)->delete();
+        return redirect()->route('pengaturan-paket-acara.index')
+                        ->with('success', 'Semua pengaturan pengisi acara untuk event ini telah dihapus.');
     }
 }

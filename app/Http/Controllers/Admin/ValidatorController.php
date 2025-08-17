@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\SchedulerService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class ValidatorController extends Controller
 {
@@ -20,37 +21,52 @@ class ValidatorController extends Controller
         $validated = $request->validate([
             'booking_id' => 'required|exists:bookings,id',
             'event_id'   => 'required|exists:events,id',
-            'date'       => 'required|date',
+            'date'       => 'required|date_format:Y-m-d',
             'start_time' => 'required|date_format:H:i',
             'end_time'   => 'required|date_format:H:i|after:start_time',
-            // Frontend kirim key "location" → validasi di sini:
-            'location'   => 'nullable|string|max:500',
+            'location'   => 'nullable|string|max:500',   // frontend kirim "location"
             'latitude'   => 'nullable|numeric|between:-90,90',
             'longitude'  => 'nullable|numeric|between:-180,180',
             'assign'     => 'nullable|boolean',
         ]);
 
         // Jadikan "" → null agar tidak menimpa kolom existing
-        $loc = $validated['location']   ?? null;
-        $lat = $validated['latitude']   ?? null;
-        $lng = $validated['longitude']  ?? null;
+        $loc = $validated['location']  ?? null;
+        $lat = $validated['latitude']  ?? null;
+        $lng = $validated['longitude'] ?? null;
 
         $loc = ($loc !== null && trim($loc) === '') ? null : $loc;
         $lat = ($lat === '' ? null : $lat);
         $lng = ($lng === '' ? null : $lng);
 
-        $result = $this->schedulerService->checkAvailabilityAndMaybeAssignToExisting(
-            (int)$validated['booking_id'],
-            (int)$validated['event_id'],
-            $validated['date'],
-            $validated['start_time'],
-            $validated['end_time'],
-            $loc,
-            $lat !== null ? (float)$lat : null,
-            $lng !== null ? (float)$lng : null,
-            (bool)($validated['assign'] ?? false)
-        );
+        $assign = $request->boolean('assign');
 
-        return response()->json($result);
+        try {
+            $result = $this->schedulerService->checkAvailabilityAndMaybeAssignToExisting(
+                (int)$validated['booking_id'],
+                (int)$validated['event_id'],
+                $validated['date'],
+                $validated['start_time'],
+                $validated['end_time'],
+                $loc,
+                $lat !== null ? (float)$lat : null,
+                $lng !== null ? (float)$lng : null,
+                $assign
+            );
+
+            return response()->json($result);
+        } catch (ValidationException $e) {
+            // Mis. dari ensureValidWindow()
+            return response()->json([
+                'ok'     => false,
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            // Log kalau perlu: \Log::error($e);
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Terjadi kesalahan saat memeriksa jadwal.',
+            ], 500);
+        }
     }
 }

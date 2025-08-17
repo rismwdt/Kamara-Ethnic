@@ -31,6 +31,7 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->text('notes')->nullable();
             $table->enum('priority', ['normal', 'keluarga', 'darurat'])->default('normal');
+            $table->boolean('is_family')->default(false);
             $table->enum('status', ['tertunda', 'disetujui', 'ditolak'])->default('tertunda');
             $table->timestamps();
         });

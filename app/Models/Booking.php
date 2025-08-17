@@ -31,7 +31,13 @@ class Booking extends Model
         'image',
         'notes',
         'priority',
+        'is_family',
         'status'
+    ];
+
+    protected $casts = [
+        'priority'  => 'string',
+        'is_family' => 'boolean',
     ];
 
     public function user()
@@ -46,16 +52,8 @@ class Booking extends Model
 
     public function performers()
     {
-        return $this->belongsToMany(Performer::class, 'booking_performers');
+        return $this->belongsToMany(Performer::class, 'booking_performers')
+            ->withPivot(['is_external','confirmation_status','agreed_rate'])
+            ->withTimestamps();
     }
-
-    // public function getScheduleLocationAttribute()
-    // {
-    //     return $this->schedule ? $this->schedule->location : null;
-    // }
-
-    // public function getUserEmailAttribute()
-    // {
-    //     return $this->user ? $this->user->email : null;
-    // }
 }

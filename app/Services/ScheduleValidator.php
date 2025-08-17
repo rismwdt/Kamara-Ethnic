@@ -3,26 +3,54 @@
 namespace App\Services;
 
 use App\Models\Booking;
+use Illuminate\Validation\ValidationException;
 
 class ScheduleValidator
 {
     /**
+     * Wrapper kompatibel: cek ketersediaan hanya dari primitif.
+     * Menggunakan aturan: slot terkunci jika pivot.status = tertunda|dikonfirmasi.
+     */
+    public function isAvailable(int $performerId, string $date, string $startTime, string $endTime): bool
+    {
+        // booking "virtual" tanpa koordinat (buffer statis akan dipakai)
+        $booking = (object)[
+            'id'         => null,
+            'date'       => $date,
+            'start_time' => $startTime,
+            'end_time'   => $endTime,
+            'latitude'   => null,
+            'longitude'  => null,
+        ];
+
+        // performer "virtual" (cukup id saja)
+        $performer = (object)['id' => $performerId];
+
+        return $this->isPerformerAvailable($performer, $booking);
+    }
+
+    /**
      * Cek ketersediaan (boolean) – dipakai mesin penjadwalan.
+     * Memperhitungkan:
+     *  - Overlap waktu (ketat; back-to-back diperbolehkan)
+     *  - Status pivot: hanya 'tertunda'|'dikonfirmasi' yang mengunci slot
+     *  - Buffer perjalanan dinamis jika ada koordinat
      */
     public function isPerformerAvailable($performer, $booking, $requirement = null): bool
     {
-        // 0) Hindari membandingkan dengan booking yang sama (saat edit)
         $excludeId = isset($booking->id) ? $booking->id : null;
 
-        // 1) Cek bentrok jadwal (overlap) – rumus KETAT (back-to-back boleh)
+        // 1) Cek bentrok jadwal (overlap) pakai Eloquent + filter status pivot
         $conflict = Booking::whereHas('performers', function ($q) use ($performer) {
-                $q->whereKey($performer->id);
+                $q->whereKey($performer->id)
+                  ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
             })
             ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
             ->whereDate('date', $booking->date)
             ->where(function ($q) use ($booking) {
-                $q->where('start_time', '<',  $booking->end_time)
-                  ->where('end_time',   '>',  $booking->start_time);
+                // overlap ketat: start < newEnd AND end > newStart
+                $q->where('start_time', '<', $booking->end_time)
+                  ->where('end_time',   '>', $booking->start_time);
             })
             ->exists();
 
@@ -32,7 +60,8 @@ class ScheduleValidator
 
         // 2) Cek jeda perjalanan + buffer dinamis (dua arah)
         $bookingsToday = Booking::whereHas('performers', function ($q) use ($performer) {
-                $q->whereKey($performer->id);
+                $q->whereKey($performer->id)
+                  ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
             })
             ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
             ->whereDate('date', $booking->date)
@@ -49,6 +78,7 @@ class ScheduleValidator
                 ? $this->calculateDistanceKm($latNew, $lonNew, $b->latitude, $b->longitude)
                 : 0.0;
 
+            // NOTE: speed default 15 km/jam → bisa diubah sesuai kota/traffic
             $travelTime = $this->estimateTravelTimeMinutes($distance, 15);
             $buffer     = $hasCoords ? $this->dynamicBufferMinutes($distance) : $MIN_STATIC_BUFFER;
 
@@ -72,29 +102,28 @@ class ScheduleValidator
                     return false;
                 }
             }
-            // Jika tidak termasuk i/ii, berarti overlap dan sudah ditangani di langkah 1.
+            // Jika tidak termasuk i/ii, maka overlap; sudah ditangani di langkah 1.
         }
 
-        // 3) Lolos semua cek
         return true;
     }
 
     /**
-     * Versi detail untuk API – mengembalikan array berisi available + reason.
+     * Versi detail untuk API – available + reason (tetap pakai filter status pivot).
      */
     public function getAvailabilityDetail($performer, $booking, $requirement = null): array
     {
-        // Ulangi cek agar bisa beri alasan yang spesifik.
         $excludeId = isset($booking->id) ? $booking->id : null;
 
         $overlap = Booking::whereHas('performers', function ($q) use ($performer) {
-                $q->whereKey($performer->id);
+                $q->whereKey($performer->id)
+                  ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
             })
             ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
             ->whereDate('date', $booking->date)
             ->where(function ($q) use ($booking) {
-                $q->where('start_time', '<',  $booking->end_time)
-                  ->where('end_time',   '>',  $booking->start_time);
+                $q->where('start_time', '<', $booking->end_time)
+                  ->where('end_time',   '>', $booking->start_time);
             })
             ->exists();
 
@@ -106,7 +135,8 @@ class ScheduleValidator
         }
 
         $bookingsToday = Booking::whereHas('performers', function ($q) use ($performer) {
-                $q->whereKey($performer->id);
+                $q->whereKey($performer->id)
+                  ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
             })
             ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
             ->whereDate('date', $booking->date)
@@ -157,6 +187,8 @@ class ScheduleValidator
         ];
     }
 
+    // ======================= util jarak & waktu =======================
+
     private function calculateDistanceKm($lat1, $lon1, $lat2, $lon2)
     {
         $earthRadius = 6371;
@@ -178,11 +210,26 @@ class ScheduleValidator
 
     private function dynamicBufferMinutes($distanceKm)
     {
-        if ($distanceKm <= 1) return 10;  // dekat, buffer kecil
+        if ($distanceKm <= 1) return 10;  // dekat
         if ($distanceKm <= 5) return 20;  // sedang
-        return 30;                        // jauh
+        return 30;                         // jauh
     }
 
+    // (opsional) validasi format window kalau mau dipakai
+    public function ensureValidWindow(string $date, string $start, string $end): void
+    {
+        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            throw ValidationException::withMessages(['date' => 'Format tanggal harus YYYY-MM-DD']);
+        }
+        if (!preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $start) || !preg_match('/^\d{2}:\d{2}(:\d{2})?$/', $end)) {
+            throw ValidationException::withMessages(['time' => 'Format jam harus HH:MM atau HH:MM:SS']);
+        }
+        if (strtotime("$date $start") >= strtotime("$date $end")) {
+            throw ValidationException::withMessages(['time' => 'Jam mulai harus lebih kecil dari jam selesai']);
+        }
+    }
+
+    // debug helper
     public function debugDistanceAndTime($lat1, $lon1, $lat2, $lon2, $speed = 15)
     {
         $distance = $this->calculateDistanceKm($lat1, $lon1, $lat2, $lon2);
