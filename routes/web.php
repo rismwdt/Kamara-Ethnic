@@ -16,7 +16,6 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PerformerController;
 use App\Http\Controllers\Admin\SchedulerController;
 use App\Http\Controllers\Admin\ValidatorController;
-use App\Http\Controllers\Klien\NominatimController;
 use App\Http\Controllers\Admin\PerformerRoleController;
 use App\Http\Controllers\Admin\KebutuhanEventController;
 use App\Http\Controllers\Admin\OptimasiJadwalController;
@@ -33,7 +32,6 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'role:admin'])
     ->name('dashboard');
 
-//Profile
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -55,13 +53,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::resource('pengaturan-paket-acara', PerformerRequirementController::class)->except(['show']);
     Route::delete('pengaturan-paket-acara/event/{event}', [PerformerRequirementController::class,'destroyByEvent'])
     ->name('pengaturan-paket-acara.destroy-event');
-    Route::get('rekap-kebutuhan', [RecapController::class, 'index'])->name('rekap.index');
+    // Route::get('rekap-kebutuhan', [RecapController::class, 'index'])->name('rekap.index');
     Route::get('optimasi-jadwal', [OptimasiJadwalController::class, 'index'])->name('optimasi.index');
 });
 
 //Klien
 Route::middleware(['auth', 'role:client'])->group(function () {
-    Route::get('/api/nominatim', [NominatimController::class, 'search'])->name('nominatim.search');
     Route::post('/cek-jadwal', [ScheduleController::class, 'checkSchedule'])->name('cek-jadwal');
     Route::post('/pesanan', [BookingController::class, 'store'])->name('booking.store');
 });

@@ -7,13 +7,19 @@ use Illuminate\Validation\ValidationException;
 
 class ScheduleValidator
 {
+    /** ====== Konfigurasi sederhana (ubah sesuai kebijakan) ====== */
+    private const MAX_TASKS_PER_DAY          = 2;    // batas maksimal tugas per performer per hari
+    private const DEFAULT_SPEED_KMH          = 15;   // asumsi kecepatan rata-rata (km/jam)
+    private const PATH_CORRECTION_FACTOR     = 1.35; // koreksi jalur tidak lurus
+    private const MIN_STATIC_BUFFER_MIN      = 10;   // buffer default jika koordinat tidak tersedia
+    private const MAX_FEASIBLE_DISTANCE_KM   = null; // contoh: 25.0; null = tanpa batas jarak keras
+
     /**
-     * Wrapper kompatibel: cek ketersediaan hanya dari primitif.
-     * Menggunakan aturan: slot terkunci jika pivot.status = tertunda|dikonfirmasi.
+     * Wrapper: cek ketersediaan dari primitif.
+     * Mengunci slot jika pivot.status ∈ {tertunda, dikonfirmasi}.
      */
     public function isAvailable(int $performerId, string $date, string $startTime, string $endTime): bool
     {
-        // booking "virtual" tanpa koordinat (buffer statis akan dipakai)
         $booking = (object)[
             'id'         => null,
             'date'       => $date,
@@ -22,8 +28,6 @@ class ScheduleValidator
             'latitude'   => null,
             'longitude'  => null,
         ];
-
-        // performer "virtual" (cukup id saja)
         $performer = (object)['id' => $performerId];
 
         return $this->isPerformerAvailable($performer, $booking);
@@ -32,15 +36,21 @@ class ScheduleValidator
     /**
      * Cek ketersediaan (boolean) – dipakai mesin penjadwalan.
      * Memperhitungkan:
+     *  - Batas maksimal tugas per hari (hard cap)
      *  - Overlap waktu (ketat; back-to-back diperbolehkan)
-     *  - Status pivot: hanya 'tertunda'|'dikonfirmasi' yang mengunci slot
-     *  - Buffer perjalanan dinamis jika ada koordinat
+     *  - Buffer perjalanan dinamis (berdasar jarak Haversine + estimasi waktu tempuh)
+     *  - (Opsional) Batas jarak keras (MAX_FEASIBLE_DISTANCE_KM)
      */
     public function isPerformerAvailable($performer, $booking, $requirement = null): bool
     {
         $excludeId = isset($booking->id) ? $booking->id : null;
 
-        // 1) Cek bentrok jadwal (overlap) pakai Eloquent + filter status pivot
+        // 0) Batas maksimal tugas per hari
+        if (!$this->underDailyCap($performer->id, $booking->date)) {
+            return false;
+        }
+
+        // 1) Cek bentrok jadwal (overlap) dengan filter status pivot yang mengunci
         $conflict = Booking::whereHas('performers', function ($q) use ($performer) {
                 $q->whereKey($performer->id)
                   ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
@@ -70,24 +80,31 @@ class ScheduleValidator
         $latNew = $booking->latitude ?? null;
         $lonNew = $booking->longitude ?? null;
 
-        $MIN_STATIC_BUFFER = 10; // menit, jika tidak ada koordinat
-
         foreach ($bookingsToday as $b) {
-            $hasCoords = !is_null($latNew) && !is_null($lonNew) && !is_null($b->latitude) && !is_null($b->longitude);
-            $distance  = $hasCoords
-                ? $this->calculateDistanceKm($latNew, $lonNew, $b->latitude, $b->longitude)
+            $hasCoords = $this->hasCoords($latNew, $lonNew) && $this->hasCoords($b->latitude, $b->longitude);
+            $distance  = $hasCoords ? $this->calculateDistanceKm($latNew, $lonNew, $b->latitude, $b->longitude) : 0.0;
+
+            // (Opsional) batas jarak keras
+            if ($hasCoords && is_numeric(self::MAX_FEASIBLE_DISTANCE_KM)) {
+                if ($distance > (float) self::MAX_FEASIBLE_DISTANCE_KM) {
+                    return false;
+                }
+            }
+
+            $travelTime = $hasCoords
+                ? $this->estimateTravelTimeMinutes($distance, self::DEFAULT_SPEED_KMH)
                 : 0.0;
 
-            // NOTE: speed default 15 km/jam → bisa diubah sesuai kota/traffic
-            $travelTime = $this->estimateTravelTimeMinutes($distance, 15);
-            $buffer     = $hasCoords ? $this->dynamicBufferMinutes($distance) : $MIN_STATIC_BUFFER;
+            $buffer = $hasCoords
+                ? $this->dynamicBufferMinutes($distance)
+                : self::MIN_STATIC_BUFFER_MIN;
 
             $newStart = strtotime($booking->start_time);
             $newEnd   = strtotime($booking->end_time);
             $bStart   = strtotime($b->start_time);
             $bEnd     = strtotime($b->end_time);
 
-            // i) b berakhir sebelum new mulai → perlu jeda sebelum new.start
+            // i) b berakhir sebelum new mulai → butuh jeda sebelum new.start
             if ($bEnd <= $newStart) {
                 $gap = (int) round(($newStart - $bEnd) / 60);
                 if ($gap < ($travelTime + $buffer)) {
@@ -95,25 +112,32 @@ class ScheduleValidator
                 }
             }
 
-            // ii) b mulai setelah new berakhir → perlu jeda setelah new.end
+            // ii) b mulai setelah new berakhir → butuh jeda setelah new.end
             if ($newEnd <= $bStart) {
                 $gap = (int) round(($bStart - $newEnd) / 60);
                 if ($gap < ($travelTime + $buffer)) {
                     return false;
                 }
             }
-            // Jika tidak termasuk i/ii, maka overlap; sudah ditangani di langkah 1.
+            // jika bukan i/ii berarti overlap, sudah ditolak pada langkah 1
         }
 
         return true;
     }
 
     /**
-     * Versi detail untuk API – available + reason (tetap pakai filter status pivot).
+     * Versi detail (untuk API/UX) – alasan kenapa tidak tersedia.
      */
     public function getAvailabilityDetail($performer, $booking, $requirement = null): array
     {
         $excludeId = isset($booking->id) ? $booking->id : null;
+
+        if (!$this->underDailyCap($performer->id, $booking->date)) {
+            return [
+                'available' => false,
+                'reason'    => 'Melebihi batas maksimal tugas per hari.'
+            ];
+        }
 
         $overlap = Booking::whereHas('performers', function ($q) use ($performer) {
                 $q->whereKey($performer->id)
@@ -130,7 +154,7 @@ class ScheduleValidator
         if ($overlap) {
             return [
                 'available' => false,
-                'reason'    => 'Performer sudah punya jadwal yang tumpang tindih pada jam tersebut.'
+                'reason'    => 'Performer memiliki jadwal yang tumpang tindih pada jam tersebut.'
             ];
         }
 
@@ -144,16 +168,23 @@ class ScheduleValidator
 
         $latNew = $booking->latitude ?? null;
         $lonNew = $booking->longitude ?? null;
-        $MIN_STATIC_BUFFER = 10;
 
         foreach ($bookingsToday as $b) {
-            $hasCoords = !is_null($latNew) && !is_null($lonNew) && !is_null($b->latitude) && !is_null($b->longitude);
-            $distance  = $hasCoords
-                ? $this->calculateDistanceKm($latNew, $lonNew, $b->latitude, $b->longitude)
+            $hasCoords = $this->hasCoords($latNew, $lonNew) && $this->hasCoords($b->latitude, $b->longitude);
+            $distance  = $hasCoords ? $this->calculateDistanceKm($latNew, $lonNew, $b->latitude, $b->longitude) : 0.0;
+
+            if ($hasCoords && is_numeric(self::MAX_FEASIBLE_DISTANCE_KM) && $distance > (float) self::MAX_FEASIBLE_DISTANCE_KM) {
+                return [
+                    'available' => false,
+                    'reason'    => 'Jarak antar lokasi melebihi batas yang diizinkan (~'.round($distance, 2).' km).'
+                ];
+            }
+
+            $travelTime = $hasCoords
+                ? $this->estimateTravelTimeMinutes($distance, self::DEFAULT_SPEED_KMH)
                 : 0.0;
 
-            $travelTime = $this->estimateTravelTimeMinutes($distance, 15);
-            $buffer     = $hasCoords ? $this->dynamicBufferMinutes($distance) : $MIN_STATIC_BUFFER;
+            $buffer     = $hasCoords ? $this->dynamicBufferMinutes($distance) : self::MIN_STATIC_BUFFER_MIN;
 
             $newStart = strtotime($booking->start_time);
             $newEnd   = strtotime($booking->end_time);
@@ -165,7 +196,9 @@ class ScheduleValidator
                 if ($gap < ($travelTime + $buffer)) {
                     return [
                         'available' => false,
-                        'reason'    => "Jeda sebelum acara tidak cukup. Perlu " . round($travelTime) . " menit perjalanan + buffer {$buffer} menit (jarak ~" . round($distance, 2) . " km), tersedia {$gap} menit."
+                        'reason'    => "Jeda sebelum acara tidak cukup. Perlu " . round($travelTime) .
+                                       " menit perjalanan + buffer {$buffer} menit (jarak ~" . round($distance, 2) .
+                                       " km), tersedia {$gap} menit."
                     ];
                 }
             }
@@ -175,7 +208,9 @@ class ScheduleValidator
                 if ($gap < ($travelTime + $buffer)) {
                     return [
                         'available' => false,
-                        'reason'    => "Jeda setelah acara tidak cukup. Perlu " . round($travelTime) . " menit perjalanan + buffer {$buffer} menit (jarak ~" . round($distance, 2) . " km), tersedia {$gap} menit."
+                        'reason'    => "Jeda setelah acara tidak cukup. Perlu " . round($travelTime) .
+                                       " menit perjalanan + buffer {$buffer} menit (jarak ~" . round($distance, 2) .
+                                       " km), tersedia {$gap} menit."
                     ];
                 }
             }
@@ -187,35 +222,54 @@ class ScheduleValidator
         ];
     }
 
-    // ======================= util jarak & waktu =======================
+    /** ======================= util jarak & waktu ======================= */
 
-    private function calculateDistanceKm($lat1, $lon1, $lat2, $lon2)
+    private function hasCoords($lat, $lon): bool
     {
-        $earthRadius = 6371;
+        return !is_null($lat) && !is_null($lon);
+    }
+
+    private function calculateDistanceKm($lat1, $lon1, $lat2, $lon2): float
+    {
+        $earthRadius = 6371.0;
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);
         $a = sin($dLat / 2) ** 2 +
              cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
              sin($dLon / 2) ** 2;
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-        return $earthRadius * $c;
+        return (float) ($earthRadius * $c);
     }
 
-    private function estimateTravelTimeMinutes($distanceKm, $speedKmH = 25)
+    private function estimateTravelTimeMinutes(float $distanceKm, float $speedKmH = self::DEFAULT_SPEED_KMH): float
     {
-        // Faktor koreksi jalur tidak lurus
-        $correctionFactor = 1.35;
-        return ($distanceKm * $correctionFactor / $speedKmH) * 60;
+        $speedKmH = max(1.0, $speedKmH);
+        return (float) (($distanceKm * self::PATH_CORRECTION_FACTOR / $speedKmH) * 60.0);
     }
 
-    private function dynamicBufferMinutes($distanceKm)
+    private function dynamicBufferMinutes(float $distanceKm): int
     {
-        if ($distanceKm <= 1) return 10;  // dekat
-        if ($distanceKm <= 5) return 20;  // sedang
-        return 30;                         // jauh
+        if ($distanceKm <= 1.0) return 10;  // dekat
+        if ($distanceKm <= 5.0) return 20;  // sedang
+        return 30;                           // jauh
     }
 
-    // (opsional) validasi format window kalau mau dipakai
+    /** ======================= util kebijakan harian ======================= */
+
+    private function underDailyCap(int $performerId, string $date): bool
+    {
+        $count = Booking::whereHas('performers', function ($q) use ($performerId) {
+                $q->whereKey($performerId)
+                  ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
+            })
+            ->whereDate('date', $date)
+            ->count();
+
+        return $count < self::MAX_TASKS_PER_DAY;
+    }
+
+    /** ======================= validasi waktu ======================= */
+
     public function ensureValidWindow(string $date, string $start, string $end): void
     {
         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
@@ -229,8 +283,8 @@ class ScheduleValidator
         }
     }
 
-    // debug helper
-    public function debugDistanceAndTime($lat1, $lon1, $lat2, $lon2, $speed = 15)
+    // Debug helper (opsional)
+    public function debugDistanceAndTime($lat1, $lon1, $lat2, $lon2, $speed = self::DEFAULT_SPEED_KMH): array
     {
         $distance = $this->calculateDistanceKm($lat1, $lon1, $lat2, $lon2);
         $travelTime = $this->estimateTravelTimeMinutes($distance, $speed);

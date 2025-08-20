@@ -13,7 +13,6 @@ class PerformerRequirement extends Model
         'event_id',
         'performer_role_id',
         'quantity',
-        'is_unique',
         'notes'
     ];
 

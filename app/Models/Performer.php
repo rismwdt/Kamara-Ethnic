@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Builder;
 
 class Performer extends Model
 {
@@ -35,23 +36,25 @@ class Performer extends Model
 
     public function bookings()
     {
-        return $this->belongsToMany(Booking::class, 'booking_performers') // ← perbaiki ini
+        return $this->belongsToMany(Booking::class, 'booking_performers')
             ->withPivot(['is_external', 'confirmation_status', 'agreed_rate'])
             ->withTimestamps();
     }
 
-    public function scopeSchedulable($q)
+    public function scopeSchedulable(Builder $q): Builder
     {
-        return $q->where('status', 'aktif')->where('is_active', true);
+        return $q->where('is_active', 1);
     }
 
-    public function scopeInternal($q)
+    /** Internal = bukan eksternal */
+    public function scopeInternal(Builder $q): Builder
     {
-        return $q->where('is_external', false);
+        return $q->where('is_external', 0);
     }
 
-    public function scopeExternal($q)
+    /** Eksternal */
+    public function scopeExternal(Builder $q): Builder
     {
-        return $q->where('is_external', true);
+        return $q->where('is_external', 1);
     }
 }

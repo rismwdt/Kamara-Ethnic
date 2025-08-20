@@ -171,5 +171,92 @@
             </table>
             </div>
         </div>
+        {{-- ====== Rekap & Prioritas Pengisi Acara (Greedy) ====== --}}
+@php
+  $totalPerformer   = $totalPerformer   ?? 0;
+  $prioritasUtama   = $prioritasUtama   ?? '-';
+  $kapasitasHariIni = $kapasitasHariIni ?? 0;
+  $totalKapasitas   = $totalKapasitas   ?? 0;
+  $avgDurasi        = $avgDurasi        ?? 0;
+  $rekap            = collect($rekap ?? []);
+@endphp
+
+<div class="mt-8 space-y-6">
+  {{-- Cards --}}
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+      <p class="text-sm text-gray-500">Total Performer</p>
+      <p class="text-2xl font-bold">{{ $totalPerformer }}</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+      <p class="text-sm text-gray-500">Prioritas Utama</p>
+      <p class="text-2xl font-bold text-red-500">{{ $prioritasUtama }}</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+      <p class="text-sm text-gray-500">Kapasitas Hari Ini</p>
+      <p class="text-2xl font-bold text-green-600">{{ $kapasitasHariIni }}/{{ $totalKapasitas }}</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow border border-gray-200">
+      <p class="text-sm text-gray-500">Rata-rata Durasi</p>
+      <p class="text-2xl font-bold">{{ $avgDurasi }} jam</p>
+    </div>
+  </div>
+
+  {{-- Tabel Prioritas (5 teratas) --}}
+  <div class="bg-white p-4 rounded-lg shadow border border-gray-200 overflow-x-auto">
+    <table class="min-w-full text-sm text-left border border-gray-200">
+      <thead class="bg-gray-100 text-gray-700 uppercase">
+        <tr>
+          <th class="px-4 py-2 border">No</th>
+          <th class="px-4 py-2 border">Pesanan</th>
+          <th class="px-4 py-2 border">Tenggat</th>
+          <th class="px-4 py-2 border">Nilai</th>
+          <th class="px-4 py-2 border">Kompleksitas</th>
+          <th class="px-4 py-2 border">Tanggal Masuk</th>
+          <th class="px-4 py-2 border">Skor Prioritas</th>
+          <th class="px-4 py-2 border">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        @forelse($rekap as $i => $item)
+          <tr class="hover:bg-gray-50 align-top">
+            <td class="px-4 py-2 border">{{ $i+1 }}</td>
+
+            <td class="px-4 py-2 border">
+              <div class="font-semibold">{{ $item->kode }}</div>
+              <div class="text-xs text-gray-500">{{ $item->klien }}</div>
+            </td>
+
+            <td class="px-4 py-2 border">{{ $item->deadline }}</td>
+            <td class="px-4 py-2 border">{{ $item->value }}</td>
+            <td class="px-4 py-2 border">{{ $item->complexity }}</td>
+            <td class="px-4 py-2 border">{{ $item->time }}</td>
+            <td class="px-4 py-2 border font-bold">{{ $item->priority_score }}</td>
+
+            <td class="px-4 py-2 border">
+              @php $stats = collect($item->status_list ?? []); @endphp
+              @if($stats->isNotEmpty())
+                <ul class="list-disc list-inside">
+                  @foreach($stats as $li)
+                    <li>{{ $li }}</li>
+                  @endforeach
+                </ul>
+              @else
+                —
+              @endif
+            </td>
+          </tr>
+        @empty
+          <tr>
+            <td colspan="10" class="px-4 py-6 text-center text-gray-500">
+              Belum ada data untuk direkap.
+            </td>
+          </tr>
+        @endforelse
+      </tbody>
+    </table>
+  </div>
+</div>
+
     </main>
 </x-app-layout>

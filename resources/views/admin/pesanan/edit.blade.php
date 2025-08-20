@@ -46,24 +46,9 @@
             @endif
 
             <div class="bg-white shadow rounded-lg p-6 text-gray-800">
-                <h3 class="text-lg font-semibold mb-4">Ubah Status & Prioritas</h3>
+                <h3 class="text-lg font-semibold mb-4">Ubah Prioritas</h3>
 
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl">
-                    {{-- Status --}}
-                    {{-- <div>
-                        <x-input-label for="status" value="Status" />
-                        @php $statusOld = old('status', $booking->status); @endphp
-                        <select id="status" name="status" class="mt-1 block w-full rounded border-gray-300 shadow-sm">
-                            <option value="">-- Biarkan tanpa perubahan --</option>
-                            <option value="tertunda" {{ $statusOld==='tertunda' ? 'selected' : '' }}>Tertunda</option>
-                            <option value="diterima" {{ $statusOld==='diterima' ? 'selected' : '' }}>Diterima</option>
-                            <option value="ditolak"  {{ $statusOld==='ditolak'  ? 'selected' : '' }}>Ditolak</option>
-                            <option value="selesai"  {{ $statusOld==='selesai'  ? 'selected' : '' }}>Selesai</option>
-                        </select>
-                        <x-input-error :messages="$errors->get('status')" class="mt-2" />
-                    </div> --}}
-
-                    {{-- Prioritas --}}
                     <div>
                         <x-input-label for="priority" value="Prioritas" />
                         @php $pOld = old('priority', $booking->priority ?? 'normal'); @endphp

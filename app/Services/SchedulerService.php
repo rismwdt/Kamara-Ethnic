@@ -13,9 +13,6 @@ class SchedulerService
 
     /**
      * Cek ketersediaan & (opsional) assign ke booking yang sudah ada.
-     * - Internal didahulukan, lalu eksternal (fallback)
-     * - Tulis pivot: is_external, confirmation_status (IDN), agreed_rate (null)
-     * - Kebijakan status: jika ada eksternal -> booking 'tertunda', selain itu 'diterima'
      */
     public function checkAvailabilityAndMaybeAssignToExisting(
         int $bookingId,
@@ -30,7 +27,6 @@ class SchedulerService
     ): array {
         $booking = Booking::findOrFail($bookingId);
 
-        // Validasi window waktu (tambahkan method ensureValidWindow di ScheduleValidator jika belum ada)
         $this->validator->ensureValidWindow($date, $startTime, $endTime);
 
         // Draft nilai terbaru (tanpa save)
@@ -39,43 +35,51 @@ class SchedulerService
         $booking->start_time = $startTime;
         $booking->end_time   = $endTime;
 
-        if ($location !== null && trim($location) !== '') {
-            $booking->location_detail = $location;
-        }
+        if ($location !== null && trim($location) !== '') { $booking->location_detail = $location; }
         if ($latitude !== null)  { $booking->latitude  = $latitude;  }
         if ($longitude !== null) { $booking->longitude = $longitude; }
 
-        // Hindari kolom 'location' yang tidak dipakai (kalau ada)
-        if (array_key_exists('location', $booking->getAttributes())) {
-            unset($booking->location);
-        }
-
-        // Ambil requirement per role untuk event ini
+        // Ambil requirement per role
         $requirements = PerformerRequirement::where('event_id', $eventId)->get();
         if ($requirements->isEmpty()) {
             return ['available' => false, 'reason' => 'Tidak ada requirement performer untuk event ini.'];
         }
 
-        $chosen = [];   // array of Performer models terpilih (lintas role)
-        $gaps   = [];   // role yang tidak terpenuhi
+        $chosen = [];
+        $gaps   = [];
 
         foreach ($requirements as $req) {
             $need = max(1, (int)$req->quantity);
 
-            // Kandidat internal & eksternal utk role terkait
+            // Kandidat per role (internal dulu, lalu eksternal) + pemerataan beban harian
             $internal = Performer::query()
                 ->schedulable()->internal()
                 ->where('performer_role_id', $req->performer_role_id)
-                ->orderBy('name') // stabil
+                ->withCount([
+                    'bookings as tasks_today' => function ($q) use ($booking) {
+                        $q->whereDate('date', $booking->date)
+                          ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
+                    }
+                ])
+                ->orderBy('tasks_today')
+                ->orderBy('name')
+                ->orderBy('id')
                 ->get();
 
             $external = Performer::query()
                 ->schedulable()->external()
                 ->where('performer_role_id', $req->performer_role_id)
+                ->withCount([
+                    'bookings as tasks_today' => function ($q) use ($booking) {
+                        $q->whereDate('date', $booking->date)
+                          ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
+                    }
+                ])
+                ->orderBy('tasks_today')
                 ->orderBy('name')
+                ->orderBy('id')
                 ->get();
 
-            // Greedy: internal dulu, lalu eksternal
             $picked = $this->pickGreedyWithExternalModels(
                 $internal->all(),
                 $external->all(),
@@ -111,42 +115,34 @@ class SchedulerService
             ];
         }
 
-        // Tulis ke pivot + update status booking
+        // Simpan penugasan
         DB::transaction(function () use ($booking, $chosen) {
-            // safety
-            if (array_key_exists('location', $booking->getAttributes())) {
-                unset($booking->location);
-            }
-
-            // siapkan payload pivot per performer
             $payload = [];
             foreach ($chosen as $p) {
                 $payload[$p->id] = [
                     'is_external'         => $p->is_external ? 1 : 0,
                     'confirmation_status' => $p->is_external ? 'tertunda' : 'dikonfirmasi',
-                    'agreed_rate'         => null,
+                    'agreed_rate'         => null, // belum dipakai
                 ];
             }
-
             $booking->performers()->syncWithoutDetaching($payload);
 
-            // Kebijakan status booking
             $hasExternal      = collect($chosen)->contains(fn($x) => (bool)$x->is_external);
             $booking->status  = $hasExternal ? 'tertunda' : 'diterima';
             $booking->save();
         });
 
         return [
-            'available'      => true,
-            'performer_name' => implode(', ', array_map(fn($p) => $p->name, $chosen)),
-            'assigned'       => true,
-            'booking_id'     => $booking->id,
-            'booking_status'  => $booking->status
+            'available'       => true,
+            'performer_name'  => implode(', ', array_map(fn($p) => $p->name, $chosen)),
+            'assigned'        => true,
+            'booking_id'      => $booking->id,
+            'booking_status'  => $booking->status,
         ];
     }
 
     /**
-     * Cek ketersediaan & (opsional) buat booking baru + assign.
+     * Cek ketersediaan & (opsional) buat booking baru sekaligus assign.
      */
     public function checkAvailabilityAndMaybeAssign(
         int $eventId,
@@ -158,10 +154,8 @@ class SchedulerService
         ?float $longitude = null,
         bool $assign = false
     ): array {
-        // Validasi window waktu
         $this->validator->ensureValidWindow($date, $startTime, $endTime);
 
-        // Build booking draft
         $attrs = [
             'event_id'   => $eventId,
             'date'       => $date,
@@ -187,13 +181,29 @@ class SchedulerService
             $internal = Performer::query()
                 ->schedulable()->internal()
                 ->where('performer_role_id', $req->performer_role_id)
+                ->withCount([
+                    'bookings as tasks_today' => function ($q) use ($bookingDraft) {
+                        $q->whereDate('date', $bookingDraft->date)
+                          ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
+                    }
+                ])
+                ->orderBy('tasks_today')
                 ->orderBy('name')
+                ->orderBy('id')
                 ->get();
 
             $external = Performer::query()
                 ->schedulable()->external()
                 ->where('performer_role_id', $req->performer_role_id)
+                ->withCount([
+                    'bookings as tasks_today' => function ($q) use ($bookingDraft) {
+                        $q->whereDate('date', $bookingDraft->date)
+                          ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
+                    }
+                ])
+                ->orderBy('tasks_today')
                 ->orderBy('name')
+                ->orderBy('id')
                 ->get();
 
             $picked = $this->pickGreedyWithExternalModels(
@@ -224,7 +234,6 @@ class SchedulerService
 
         $bookingSaved = null;
         DB::transaction(function () use (&$bookingSaved, $bookingDraft, $chosen) {
-            // Simpan booking dulu tanpa status, nanti ditentukan dari komposisi internal/eksternal
             $bookingSaved = Booking::create($bookingDraft->toArray());
 
             $payload = [];
@@ -232,7 +241,7 @@ class SchedulerService
                 $payload[$p->id] = [
                     'is_external'         => $p->is_external ? 1 : 0,
                     'confirmation_status' => $p->is_external ? 'tertunda' : 'dikonfirmasi',
-                    'agreed_rate'         => null,
+                    'agreed_rate'         => null, // belum dipakai
                 ];
             }
 
@@ -244,90 +253,44 @@ class SchedulerService
         });
 
         return [
-            'available'      => true,
-            'performer_name' => implode(', ', array_map(fn($p) => $p->name, $chosen)),
-            'assigned'       => true,
-            'booking_id'     => $bookingSaved?->id,
+            'available'       => true,
+            'performer_name'  => implode(', ', array_map(fn($p) => $p->name, $chosen)),
+            'assigned'        => true,
+            'booking_id'      => $bookingSaved?->id,
             'booking_status'  => $bookingSaved?->status,
         ];
     }
 
     /**
-     * Batch assign untuk booking status 'tertunda' dengan urutan:
-     * - is_family DESC (keluarga dulu)
-     * - priority: darurat > normal
-     * - tanggal, lalu jam mulai
+     * Greedy: internal dulu, lanjut eksternal.
+     * NOTE: isPerformerAvailable() mencakup: daily cap, overlap, travel+buffer, (opsional) jarak keras.
      */
-    public function assignPerformers()
-    {
-        $results = [];
+    private function pickGreedyWithExternalModels(
+        array $internalCandidates,
+        array $externalCandidates,
+        $booking,
+        $requirement,
+        int $need
+    ): array {
+        $picked = [];
 
-        $bookings = Booking::where('status', 'tertunda')
-            ->orderByDesc('is_family')
-            ->orderByRaw("FIELD(priority,'darurat','normal')")
-            ->orderBy('date')
-            ->orderBy('start_time')
-            ->get();
-
-        foreach ($bookings as $booking) {
-            $requirements = PerformerRequirement::where('event_id', $booking->event_id)->get();
-            $chosen = [];
-
-            foreach ($requirements as $req) {
-                $need = max(1, (int)$req->quantity);
-
-                $internal = Performer::query()
-                    ->schedulable()->internal()
-                    ->where('performer_role_id', $req->performer_role_id)
-                    ->orderBy('name')
-                    ->get();
-
-                $external = Performer::query()
-                    ->schedulable()->external()
-                    ->where('performer_role_id', $req->performer_role_id)
-                    ->orderBy('name')
-                    ->get();
-
-                $picked = $this->pickGreedyWithExternalModels(
-                    $internal->all(),
-                    $external->all(),
-                    $booking,
-                    $req,
-                    $need
-                );
-
-                $chosen = array_merge($chosen, $picked);
+        foreach ($internalCandidates as $p) {
+            if (count($picked) >= $need) break;
+            if ($this->validator->isPerformerAvailable($p, $booking, $requirement)) {
+                $picked[] = $p;
             }
-
-            DB::transaction(function () use ($booking, $chosen) {
-                if (count($chosen) > 0) {
-                    $payload = [];
-                    foreach ($chosen as $p) {
-                        $payload[$p->id] = [
-                            'is_external'         => $p->is_external ? 1 : 0,
-                            'confirmation_status' => $p->is_external ? 'tertunda' : 'dikonfirmasi',
-                            'agreed_rate'         => null,
-                        ];
-                    }
-                    $booking->performers()->syncWithoutDetaching($payload);
-
-                    $hasExternal     = collect($chosen)->contains(fn($x) => (bool)$x->is_external);
-                    $booking->status = $hasExternal ? 'tertunda' : 'diterima';
-                } else {
-                    $booking->status = 'ditolak';
-                }
-                $booking->save();
-            });
-
-            $results[] = [
-                'booking_id' => $booking->id,
-                'event_id'   => $booking->event_id,
-                'assigned'   => array_map(fn($p) => $p->id, $chosen),
-                'status'     => $booking->status,
-            ];
         }
 
-        return $results;
+        if (count($picked) < $need) {
+            foreach ($externalCandidates as $p) {
+                if (count($picked) >= $need) break;
+                if ($this->validator->isPerformerAvailable($p, $booking, $requirement)) {
+                    $picked[] = $p;
+                }
+            }
+        }
+
+        return $picked;
     }
 
     /**
@@ -359,43 +322,95 @@ class SchedulerService
         return $this->validator->getAvailabilityDetail($performer, $booking);
     }
 
-    // ===================== helper greedy =====================
-
     /**
-     * Pilih performer: internal dulu, lalu eksternal.
-     * Memakai validator.isPerformerAvailable (yang sebaiknya memfilter jadwal pivot 'tertunda'/'dikonfirmasi').
+     * Batch assign (Optimasi/Greedy Dashboard).
+     * Urutan: is_family DESC, priority (darurat > normal), date, start_time.
      */
-    private function pickGreedyWithExternalModels(
-        array $internalCandidates,
-        array $externalCandidates,
-        $booking,
-        $requirement,
-        int $need
-    ): array {
-        $picked = [];
+    public function assignPerformers()
+    {
+        $results = [];
 
-        // internal dulu
-        foreach ($internalCandidates as $p) {
-            if (count($picked) >= $need) break;
-            if ($this->validator->isPerformerAvailable($p, $booking, $requirement)) {
-                $picked[] = $p;
+        $bookings = Booking::where('status', 'tertunda')
+            ->orderByDesc('is_family')
+            ->orderByRaw("FIELD(priority,'darurat','normal')")
+            ->orderBy('date')
+            ->orderBy('start_time')
+            ->get();
+
+        foreach ($bookings as $booking) {
+            $requirements = PerformerRequirement::where('event_id', $booking->event_id)->get();
+            $chosen = [];
+
+            foreach ($requirements as $req) {
+                $need = max(1, (int)$req->quantity);
+
+                $internal = Performer::query()
+                    ->schedulable()->internal()
+                    ->where('performer_role_id', $req->performer_role_id)
+                    ->withCount([
+                        'bookings as tasks_today' => function ($q) use ($booking) {
+                            $q->whereDate('date', $booking->date)
+                              ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
+                        }
+                    ])
+                    ->orderBy('tasks_today')
+                    ->orderBy('name')
+                    ->orderBy('id')
+                    ->get();
+
+                $external = Performer::query()
+                    ->schedulable()->external()
+                    ->where('performer_role_id', $req->performer_role_id)
+                    ->withCount([
+                        'bookings as tasks_today' => function ($q) use ($booking) {
+                            $q->whereDate('date', $booking->date)
+                              ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
+                        }
+                    ])
+                    ->orderBy('tasks_today')
+                    ->orderBy('name')
+                    ->orderBy('id')
+                    ->get();
+
+                $picked = $this->pickGreedyWithExternalModels(
+                    $internal->all(),
+                    $external->all(),
+                    $booking,
+                    $req,
+                    $need
+                );
+
+                $chosen = array_merge($chosen, $picked);
             }
-        }
 
-        // eksternal fallback
-        if (count($picked) < $need) {
-            foreach ($externalCandidates as $p) {
-                if (count($picked) >= $need) break;
+            DB::transaction(function () use ($booking, $chosen) {
+                if (count($chosen) > 0) {
+                    $payload = [];
+                    foreach ($chosen as $p) {
+                        $payload[$p->id] = [
+                            'is_external'         => $p->is_external ? 1 : 0,
+                            'confirmation_status' => $p->is_external ? 'tertunda' : 'dikonfirmasi',
+                            'agreed_rate'         => null, // belum dipakai
+                        ];
+                    }
+                    $booking->performers()->syncWithoutDetaching($payload);
 
-                // jika tidak melacak jadwal eksternal, bisa set $available = true;
-                $available = $this->validator->isPerformerAvailable($p, $booking, $requirement);
-
-                if ($available) {
-                    $picked[] = $p;
+                    $hasExternal     = collect($chosen)->contains(fn($x) => (bool)$x->is_external);
+                    $booking->status = $hasExternal ? 'tertunda' : 'diterima';
+                } else {
+                    $booking->status = 'ditolak';
                 }
-            }
+                $booking->save();
+            });
+
+            $results[] = [
+                'booking_id' => $booking->id,
+                'event_id'   => $booking->event_id,
+                'assigned'   => array_map(fn($p) => $p->id, $chosen),
+                'status'     => $booking->status,
+            ];
         }
 
-        return $picked;
+        return $results;
     }
 }

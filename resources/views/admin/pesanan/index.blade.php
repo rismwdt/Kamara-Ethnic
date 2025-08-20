@@ -18,7 +18,7 @@
         <i class="fas fa-download mr-1"></i> Unduh Laporan
     </x-primary-button>
     <x-primary-button class="bg-green-600 hover:bg-green-700" onclick="cekSemuaPerformer()">
-        <i class="fas fa-magic mr-1"></i> Cek Semua Pengisi Acara
+        <i class="fas fa-magic mr-1"></i> Cek Rekomendasi Pengisi Acara
     </x-primary-button>
 </div>
             {{-- Modal Unduh Laporan --}}
@@ -83,15 +83,18 @@
                     };
                 @endphp
                 <tr id="booking-row-{{ $booking->id }}"
-                    data-booking="{{ $booking->id }}"
-                    data-event="{{ $booking->event_id }}"
-                    data-date="{{ $booking->date }}"
-                    data-start="{{ $booking->start_time }}"
-                    data-end="{{ $booking->end_time }}"
-                    data-location="{{ $booking->location_detail }}"
-                    data-lat="{{ $booking->latitude }}"
-                    data-lng="{{ $booking->longitude }}"
-                >
+    data-booking="{{ $booking->id }}"
+    data-event="{{ $booking->event_id }}"
+    {{-- pastikan Y-m-d --}}
+    data-date="{{ optional($booking->date)->format('Y-m-d') }}"
+    {{-- pastikan H:i --}}
+    data-start="{{ $booking->start_time ? \Illuminate\Support\Str::of($booking->start_time)->substr(0,5) : '' }}"
+    data-end="{{ $booking->end_time ? \Illuminate\Support\Str::of($booking->end_time)->substr(0,5) : '' }}"
+    data-location="{{ $booking->location_detail }}"
+    data-lat="{{ $booking->latitude }}"
+    data-lng="{{ $booking->longitude }}"
+>
+
                     <td class="px-4 py-2">{{ $bookings->firstItem() + $index }}</td>
                     <td class="px-4 py-2">
                         <div class="flex items-center gap-2">
@@ -127,7 +130,7 @@
                                 onclick="cekPerformer({{ $booking->id }}, true)">
                                 <span class="inline-flex items-center">
                                     <i class="fas fa-magic mr-1"></i>
-                                    <span>Cek & Tetapkan Pengisi Acara</span>
+                                    <span>Cek & Tetapkan</span>
                                     <span class="ml-2 hidden" id="spinner-{{ $booking->id }}">⏳</span>
                                 </span>
                             </x-primary-button>
@@ -216,48 +219,56 @@
             };
 
             try {
-                const res = await axios.post(window.ENDPOINTS.cekJadwal, payload);
-                if (res.data.available) {
-                    const name = res.data.performer_name ?? '(tanpa nama)';
-                    if (statusEl) {
-                        statusEl.textContent = `✅ Performer tersedia${res.data.assigned ? ' dan sudah di-assign' : ''}: ${name}`;
-                        statusEl.classList.add('text-green-600');
-                    }
+    const res = await axios.post(window.ENDPOINTS.cekJadwal, payload);
+    if (res.data.available) {
+        const name = res.data.performer_name ?? '(tanpa nama)';
+        if (statusEl) {
+            statusEl.textContent = `✅ Performer tersedia${res.data.assigned ? ' dan sudah di-assign' : ''}: ${name}`;
+            statusEl.classList.add('text-green-600');
+        }
 
-                    // === UPDATE UI SETELAH ASSIGN ===
-                    if (res.data.assigned) {
-                        // 1) Update badge Status sesuai 'booking_status' dari server
-                        const statusCell = row.querySelector('td:nth-child(9) span'); // kolom Status = ke-9
-                        const s = (res.data.booking_status || '').toLowerCase();      // 'diterima' / 'tertunda' / 'ditolak' / 'selesai'
-                        if (statusCell && s) {
-                            statusCell.textContent = s.charAt(0).toUpperCase() + s.slice(1);
-                            const map = {
-                                tertunda: 'px-2 py-1 text-xs font-semibold rounded bg-yellow-100 text-yellow-800',
-                                diterima: 'px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800',
-                                ditolak:  'px-2 py-1 text-xs font-semibold rounded bg-red-100 text-red-800',
-                                selesai:  'px-2 py-1 text-xs font-semibold rounded bg-indigo-100 text-indigo-800'
-                            };
-                            statusCell.className = map[s] || 'px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-800';
-                        }
+        // === UPDATE UI SETELAH ASSIGN ===
+        if (res.data.assigned) {
+            // 1) Update badge Status sesuai 'booking_status' dari server
+            const statusCell = row.querySelector('td:nth-child(9) span'); // kolom Status = ke-9
+            const s = (res.data.booking_status || '').toLowerCase();      // 'diterima' / 'tertunda' / 'ditolak' / 'selesai'
+            if (statusCell && s) {
+                statusCell.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+                const map = {
+                    tertunda: 'px-2 py-1 text-xs font-semibold rounded bg-yellow-100 text-yellow-800',
+                    diterima: 'px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800',
+                    ditolak:  'px-2 py-1 text-xs font-semibold rounded bg-red-100 text-red-800',
+                    selesai:  'px-2 py-1 text-xs font-semibold rounded bg-indigo-100 text-indigo-800'
+                };
+                statusCell.className = map[s] || 'px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-800';
+            }
 
-                        // 2) Tampilkan nama performer di kolom "Pengisi Acara" (kolom ke-7)
-                        const performerCell = row.querySelector('td:nth-child(7)');
-                        if (performerCell) {
-                            const names = (res.data.performer_name || '').split(',').map(s => s.trim()).filter(Boolean);
-                            if (names.length) {
-                                performerCell.innerHTML =
-                                    '<ul class="list-disc list-inside space-y-1 max-h-24 overflow-y-auto pr-1 text-sm">'
-                                    + names.map(n => `<li class="break-words">${n}</li>`).join('')
-                                    + '</ul>';
-                            }
-                        }
-                    }
-                } else {
-                    if (statusEl) {
-                        statusEl.textContent = "❌ Performer tidak tersedia: " + (res.data.reason ?? 'Tidak diketahui');
-                        statusEl.classList.add('text-red-600');
-                    }
+            // 2) Tampilkan nama performer di kolom "Pengisi Acara" (kolom ke-7)
+            const performerCell = row.querySelector('td:nth-child(7)');
+            if (performerCell) {
+                const names = (res.data.performer_name || '').split(',').map(s => s.trim()).filter(Boolean);
+                if (names.length) {
+                    performerCell.innerHTML =
+                        '<ul class="list-disc list-inside space-y-1 max-h-24 overflow-y-auto pr-1 text-sm">'
+                        + names.map(n => `<li class="break-words">${n}</li>`).join('')
+                        + '</ul>';
                 }
+            }
+        }
+    } else {
+        // === BLOK BARU: tampilkan alasan detail + GAP ===
+        if (statusEl) {
+            let msg = "❌ Performer tidak tersedia: " + (res.data.reason ?? 'Tidak diketahui');
+            if (res.data.gaps) {
+                const list = Object.entries(res.data.gaps)
+                  .map(([roleId, g]) => `Role ${roleId}: butuh ${g.need}, tersedia ${g.available}`)
+                  .join(' | ');
+                msg += " — Gap: " + list;
+            }
+            statusEl.textContent = msg;
+            statusEl.classList.add('text-red-600');
+        }
+    }
             } catch (err) {
                 console.error(err);
                 if (statusEl) {

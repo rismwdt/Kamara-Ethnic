@@ -1,34 +1,84 @@
 console.log("pesanan.js loaded");
 
-window.addEventListener('open-modal', function (e) {
-    if (e.detail === 'modal-pesanan' && window._dataPesanan) {
-        setTimeout(() => {
-            const data = window._dataPesanan;
+// ——— util ———
+function rupiah(n) {
+  n = Number(n) || 0;
+  try { return new Intl.NumberFormat('id-ID').format(n); }
+  catch { return (n).toLocaleString('id-ID'); }
+}
 
-            document.querySelector('#modal-pesanan input[name="event_id"]').value = data.eventId;
-            document.querySelector('#modal-pesanan input[name="date"]').value = data.tanggal;
-            document.querySelector('#modal-pesanan input[name="start_time"]').value = data.mulai;
-            document.querySelector('#modal-pesanan input[name="end_time"]').value = data.selesai;
-            document.querySelector('#modal-pesanan textarea[name="location_detail"]').value = data.alamat;
-            document.querySelector('#modal-pesanan input[name="latitude"]').value = data.latitude;
-            document.querySelector('#modal-pesanan input[name="longitude"]').value = data.longitude;
+function toNumber(val) {
+  if (typeof val === 'number') return val;
+  return Number(String(val || '').replace(/[^\d]/g, '')) || 0;
+}
 
-            // Kalau ada DP
-            if (document.getElementById('dp_amount')) {
-                document.getElementById('dp_amount').textContent = 'Rp ' + Number(data.dp).toLocaleString();
-            }
-        }, 100);
-    }
-});
+function ensureHidden(form, name) {
+  var el = form.querySelector('input[name="' + name + '"]');
+  if (!el) {
+    el = document.createElement('input');
+    el.type = 'hidden';
+    el.name = name;
+    form.appendChild(el);
+  }
+  return el;
+}
 
-// Efek popup berhasil
+// ——— core ———
+function setDpAmount() {
+  var form = document.getElementById('formPesanan');
+  if (!form) {
+    console.warn('[pesanan] #formPesanan tidak ditemukan');
+    return;
+  }
+
+  // ambil harga dari hidden input atau dari _dataPesanan
+  var priceEl = form.querySelector('input[name="price"]') || document.getElementById('event_price');
+  var price = 0;
+
+  if (priceEl && priceEl.value) {
+    price = toNumber(priceEl.value);
+  } else if (window._dataPesanan && window._dataPesanan.price) {
+    price = toNumber(window._dataPesanan.price);
+  }
+
+  var dp = Math.round(price * 0.5);
+
+  var dpEl = document.getElementById('dp_amount');
+  if (dpEl) dpEl.textContent = 'Rp ' + rupiah(dp);
+
+  ensureHidden(form, 'price').value = price;
+  ensureHidden(form, 'dp').value = dp;
+
+  console.log('[pesanan] hitung DP → price:', price, 'dp:', dp);
+}
+
+// ——— hooks ———
+
+// 1) Hitung DP tiap kali modal pesanan dibuka.
+//   Beberapa komponen modal pakai event di window, ada juga yang bubbling di document.
+//   Kita dengerin dua-duanya supaya aman.
+function handleOpenModalEvent(e) {
+  // detail bisa 'modal-pesanan' (string) atau { detail: 'modal-pesanan' }
+  var detail = e && e.detail;
+  if (detail === 'modal-pesanan') {
+    // kasih sedikit delay supaya input sudah terisi dari jadwal.js
+    setTimeout(setDpAmount, 50);
+  }
+}
+window.addEventListener('open-modal', handleOpenModalEvent);
+document.addEventListener('open-modal', handleOpenModalEvent);
+
+// 2) Kalau field price diisi/diupdate belakangan (misal dari script lain), tetap update DP.
 document.addEventListener('DOMContentLoaded', function () {
-    const modalBerhasil = document.getElementById('modalBerhasil');
-    if (modalBerhasil) {
-        modalBerhasil.classList.remove('hidden');
+  var form = document.getElementById('formPesanan');
+  if (!form) return;
 
-        setTimeout(() => {
-            modalBerhasil.classList.add('hidden');
-        }, 100);
-    }
+  var priceEl = form.querySelector('input[name="price"]') || document.getElementById('event_price');
+  if (priceEl) {
+    ['change','input'].forEach(evt => {
+      priceEl.addEventListener(evt, function () {
+        setDpAmount();
+      });
+    });
+  }
 });

@@ -61,15 +61,16 @@
     <th class="px-4 py-2 border">No</th>
     <th class="px-4 py-2 border">Pesanan</th>
     <th class="px-4 py-2 border">Peran Pengisi Acara</th>
-    <th class="px-4 py-2 border">Deadline</th>
-    <th class="px-4 py-2 border">Value</th>
-    <th class="px-4 py-2 border">Complexity</th>
-    <th class="px-4 py-2 border">Customer</th>
-    <th class="px-4 py-2 border">Time</th>
-    <th class="px-4 py-2 border">Priority Score</th>
+    <th class="px-4 py-2 border">Tenggat</th>          {{-- Deadline --}}
+    <th class="px-4 py-2 border">Nilai</th>            {{-- Value / Bobot nilai --}}
+    <th class="px-4 py-2 border">Kompleksitas</th>     {{-- Complexity --}}
+    <th class="px-4 py-2 border">Jenis Klien</th>      {{-- Customer: Normal/VIP/Keluarga --}}
+    <th class="px-4 py-2 border">Tanggal Masuk</th>          {{-- Time (di contoh isinya tanggal) --}}
+    <th class="px-4 py-2 border">Skor Prioritas</th>   {{-- Priority Score --}}
     <th class="px-4 py-2 border">Status</th>
   </tr>
 </thead>
+
 
         <tbody>
           @forelse($rekap as $i => $item)
@@ -105,17 +106,26 @@
 
     {{-- Status: bullet list --}}
     <td class="px-4 py-2 border">
-      @php $stats = collect($item->status_list ?? []); @endphp
-      @if($stats->isNotEmpty())
-        <ul class="list-disc list-inside">
-          @foreach($stats as $li)
-            <li>{{ $li }}</li>
-          @endforeach
-        </ul>
-      @else
-        —
-      @endif
-    </td>
+  @if(!empty($item->status_ok) && $item->status_ok)
+    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700">
+      Terpenuhi
+    </span>
+  @else
+    @php $stats = collect($item->status_list ?? []); @endphp
+    @if($stats->isNotEmpty())
+      <ul class="list-disc list-inside">
+        @foreach($stats as $li)
+          <li>{{ $li }}</li>
+        @endforeach
+      </ul>
+    @else
+      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-yellow-100 text-yellow-800">
+        Perlu verifikasi
+      </span>
+    @endif
+  @endif
+</td>
+
   </tr>
 @empty
   <tr><td colspan="10" class="px-4 py-6 text-center text-gray-500">Belum ada data untuk direkap.</td></tr>

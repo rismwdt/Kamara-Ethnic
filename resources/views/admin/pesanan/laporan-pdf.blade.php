@@ -22,7 +22,6 @@
                 <th>Kode Pesanan</th>
                 <th>Nama Klien</th>
                 <th>Tanggal Acara</th>
-                <th>Waktu</th>
                 <th>Paket Acara</th>
                 <th>Lokasi</th>
                 <th>Pengisi Acara</th>
@@ -35,9 +34,10 @@
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $booking->booking_code }}</td>
                     <td>{{ $booking->client_name }}</td>
-                    <td>{{ \Carbon\Carbon::parse($booking->date)->format('d-m-Y') }}</td>
-                    <td>{{ $booking->start_time }} - {{ $booking->end_time }}</td>
-                    <td>{{ $booking->event->name }}</td>
+                    <td>{{ \Carbon\Carbon::parse($booking->date)->format('d-m-Y') }}
+                        <br>{{ $booking->start_time }} - {{ $booking->end_time }}
+                    </td>
+                    <td>{{ $booking->event->name }} - {{$booking->event->price}}</td>
                     <td>{{ $booking->location_detail }}</td>
                     <td>
                         <ul>

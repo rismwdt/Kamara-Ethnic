@@ -10,25 +10,38 @@ class NominatimController extends Controller
 {
     public function search(Request $request)
     {
-        $query = $request->query('q');
-
-        if (!$query) {
+        $query = trim((string) $request->query('q', ''));
+        if ($query === '') {
             return response()->json([]);
         }
 
-        $url = 'https://nominatim.openstreetmap.org/search';
+        try {
+            $resp = Http::withHeaders([
+                    'User-Agent' => 'KamaraEthnic/1.0 (support@kamara-ethnic.test)',
+                    'Accept-Language' => 'id',
+                ])
+                ->timeout(8)
+                ->get('https://nominatim.openstreetmap.org/search', [
+                    'q' => $query,
+                    'format' => 'json',
+                    'addressdetails' => 1,
+                    'limit' => 8,
+                    'countrycodes' => 'id',
+                ]);
 
-        $response = Http::withHeaders([
-            'User-Agent' => 'YourAppName/1.0 (your-email@example.com)' // wajib ada User-Agent sesuai aturan Nominatim
-        ])->get($url, [
-            'format' => 'json',
-            'countrycodes' => 'id',
-            'accept-language' => 'id',
-            'q' => $query,
-            'limit' => 5,
-        ]);
+            if (!$resp->ok()) {
+                return response()->json([
+                    'error' => 'Upstream error',
+                    'status' => $resp->status(),
+                ], 502);
+            }
 
-        return response($response->body(), $response->status())
-            ->header('Content-Type', 'application/json');
+            return response()->json($resp->json());
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error'   => 'Service unavailable',
+                'message' => config('app.debug') ? $e->getMessage() : 'Nominatim tidak dapat diakses saat ini',
+            ], 503);
+        }
     }
 }

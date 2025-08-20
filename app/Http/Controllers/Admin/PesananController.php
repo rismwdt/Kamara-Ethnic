@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use Carbon\Carbon;
 use Dompdf\Dompdf;
+use Dompdf\Options;
 use App\Models\Booking;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -31,30 +32,38 @@ class PesananController extends Controller
     }
 
     public function cetakPdf(Request $request)
-    {
-        $request->validate([
-            'start_date' => 'required|date',
-            'end_date'   => 'required|date|after_or_equal:start_date',
-        ]);
+{
+    $request->validate([
+        'start_date' => 'required|date',
+        'end_date'   => 'required|date|after_or_equal:start_date',
+    ]);
 
-        $start_date = $request->start_date;
-        $end_date   = $request->end_date;
+    $start_date = Carbon::parse($request->start_date)->toDateString();
+    $end_date   = Carbon::parse($request->end_date)->toDateString();
 
-        $bookings = Booking::whereBetween('date', [$start_date, $end_date])
-            ->orderBy('date')
-            ->get();
+    $bookings = Booking::with('event')
+        ->whereBetween('date', [$start_date, $end_date])
+        ->orderBy('date')
+        ->orderBy('start_time')
+        ->get();
 
-        $html = view('admin.pesanan.laporan-pdf', compact('bookings','start_date','end_date'))->render();
+    $html = view('admin.pesanan.laporan-pdf', compact('bookings','start_date','end_date'))->render();
 
-        $dompdf = new Dompdf();
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
+    // Opsi Dompdf
+    $options = new Options();
+    $options->set('isHtml5ParserEnabled', true);
+    $options->set('isRemoteEnabled', true);
+    $options->set('defaultFont', 'DejaVu Sans'); // aman untuk unicode
 
-        return response($dompdf->output())
-            ->header('Content-Type', 'application/pdf')
-            ->header('Content-Disposition', 'inline; filename=\"laporan-pemesanan.pdf\"');
-    }
+    $dompdf = new Dompdf($options);
+    $dompdf->loadHtml($html, 'UTF-8');
+    $dompdf->setPaper('A4', 'portrait');
+    $dompdf->render();
+
+    // Preview inline (tab baru), file name bersih
+    $filename = sprintf('laporan-pemesanan_%s_sampai_%s.pdf', $start_date, $end_date);
+    return $dompdf->stream($filename, ['Attachment' => false]);
+}
 
     public function edit($id)
     {

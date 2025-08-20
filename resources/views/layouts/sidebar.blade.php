@@ -47,11 +47,6 @@
             </span>
         @endif
     </x-nav-link>
-    <x-nav-link :href="route('rekap.index')" :active="request()->routeIs('rekap.*')"
-        class="flex items-center space-x-3 py-2 px-4 w-full hover:bg-gray-100">
-        <i class="fas fa-clipboard-list text-gray-500"></i> {{-- ikon rekap --}}
-        <span>{{ __('Rekap & Prioritas') }}</span>
-    </x-nav-link>
     <x-nav-link :href="route('optimasi.index')" :active="request()->routeIs('optimasi.*')"
         class="flex items-center space-x-3 py-2 px-4 w-full hover:bg-gray-100">
         <i class="fas fa-project-diagram text-gray-500"></i> {{-- ikon optimasi jadwal --}}

@@ -27,7 +27,6 @@ class EventController extends Controller
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'duration' => 'required|integer|min:1',
             'type' => 'required|in:siraman,upacara_adat,sisingaan,lainnya',
             'status' => 'required|in:aktif,nonaktif',
         ]);
@@ -57,7 +56,6 @@ class EventController extends Controller
             'price' => 'required|numeric|min:0',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'duration' => 'required|integer|min:1',
             'type' => 'required|in:siraman,upacara_adat,lainnya',
             'status' => 'required|in:aktif,nonaktif',
         ]);

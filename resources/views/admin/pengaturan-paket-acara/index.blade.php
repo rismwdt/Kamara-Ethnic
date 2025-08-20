@@ -21,7 +21,7 @@
                 <x-slot name="thead">
                     <tr>
                         <th class="px-4 py-2">No.</th>
-                        <th class="px-4 py-2">Event</th>
+                        <th class="px-4 py-2">Paket Acara</th>
                         <th class="px-4 py-2">Daftar Pengisi Acara</th>
                         <th class="px-4 py-2">Catatan</th>
                         <th class="px-4 py-2">Aksi</th>

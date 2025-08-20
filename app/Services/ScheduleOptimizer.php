@@ -2,121 +2,99 @@
 
 namespace App\Services;
 
-use Carbon\Carbon;
 use App\Models\Booking;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 class ScheduleOptimizer
 {
     /**
-     * Mengecek ketersediaan jadwal berbasis data pada tabel bookings.
-     *
-     * @param  string      $date        Format 'Y-m-d'
-     * @param  string      $startTime   Format 'H:i' atau 'H:i:s'
-     * @param  string      $endTime     Format 'H:i' atau 'H:i:s'
-     * @param  float|null  $latitude
-     * @param  float|null  $longitude
-     * @return array{available: bool, message: string}
+     * Aturan untuk KLIEN:
+     * - Validasi form di sini (termasuk H-3).
+     * - Cek kapasitas harian.
+     * - Cek overlap jam untuk event yang sama.
+     * - TIDAK menolak karena jarak/lat-long.
      */
-    public function checkScheduleAvailability(
-        $date,
-        $startTime,
-        $endTime,
-        $latitude = null,
-        $longitude = null,
-    ) {
-        // Normalisasi ke 'H:i:s' supaya perbandingan waktu konsisten
-        $startTime = $this->normalizeTime($startTime);
-        $endTime   = $this->normalizeTime($endTime);
+    public function checkClientAvailability(array $input): array
+    {
+        $minDate = now()->addDays(3)->toDateString();
 
-        // 1) Batas maksimal acara per hari (opsional, sesuaikan)
-        $maxEventsPerDay = 5;
-        $eventCount = Booking::query()
-            ->whereDate('date', $date)
-            ->whereIn('status', ['tertunda', 'diterima'])
+        // 1) Validasi input (di service)
+        $v = Validator::make($input, [
+            'event_id'        => ['required','exists:events,id'],
+            'date'            => ['required','date','after_or_equal:'.$minDate],
+            'start_time'      => ['required','date_format:H:i'],
+            'end_time'        => ['required','date_format:H:i','after:start_time'],
+            // lokasi tetap wajib, tapi lat/long tidak dipakai sebagai penentu ketersediaan
+            'location_detail' => ['required','string'],
+            'latitude'        => ['nullable','numeric'],
+            'longitude'       => ['nullable','numeric'],
+        ]);
+
+        if ($v->fails()) {
+            // biar controller bisa balikin 422
+            throw new ValidationException($v);
+        }
+
+        $data = $v->validated();
+
+        // 2) Cek kapasitas harian (tanpa jarak)
+        $maxEventsPerDay = 5; // kebijakan
+        $countDay = Booking::whereDate('date', $data['date'])
+            ->whereIn('status', ['tertunda','diterima'])
             ->count();
 
-        if ($eventCount >= $maxEventsPerDay) {
-            return ['available' => false, 'message' => 'Kuota acara di hari tersebut sudah penuh.'];
+        if ($countDay >= $maxEventsPerDay) {
+            return [
+                'available' => false,
+                'message'   => 'Kuota acara di tanggal tersebut sudah penuh.',
+            ];
         }
 
-        // 2) Cek bentrok waktu pada tanggal yang sama dari tabel bookings
-        // Aturan overlap:
-        // request.start < existing.end  AND  request.end > existing.start
-        $conflictingBookings = Booking::query()
-            ->whereDate('date', $date)
-            ->whereIn('status', ['tertunda', 'diterima'])
-            ->where(function ($q) use ($startTime, $endTime) {
-                $q->where('start_time', '<', $endTime)
-                  ->where('end_time',   '>', $startTime);
+        // 3) Cek overlap jam untuk event yang sama (tanpa jarak)
+        $hasOverlap = Booking::where('event_id', $data['event_id'])
+            ->whereDate('date', $data['date'])
+            ->whereIn('status', ['tertunda','diterima'])
+            ->where(function ($q) use ($data) {
+                $q->whereBetween('start_time', [$data['start_time'], $data['end_time']])
+                  ->orWhereBetween('end_time',   [$data['start_time'], $data['end_time']])
+                  ->orWhere(function ($qq) use ($data) {
+                      $qq->where('start_time','<=',$data['start_time'])
+                         ->where('end_time','>=',$data['end_time']);
+                  });
             })
-            ->get(['start_time', 'end_time', 'latitude', 'longitude']);
+            ->exists();
 
-        if ($conflictingBookings->isEmpty()) {
-            return ['available' => true, 'message' => 'Jadwal tersedia.'];
+        if ($hasOverlap) {
+            return [
+                'available' => false,
+                'message'   => 'Waktu yang dipilih berbenturan dengan pesanan lain.',
+            ];
         }
 
-        // 3) (Opsional) Periksa waktu tempuh antar lokasi
-        //    Bila salah satu titik tidak punya koordinat, kita lewati cek jarak dan tetap
-        //    menganggap bentrok jika interval waktu overlap.
-        $requestStart = Carbon::createFromFormat('H:i:s', $startTime);
+        // 4) (Opsional) tambahkan aturan lain yang relevan untuk klien — tanpa jarak
+        //    ... misalnya maximum durasi, blackout date, dll.
 
-        foreach ($conflictingBookings as $bk) {
-            // Jika tidak punya koordinat lengkap, cukup anggap bentrok karena waktu overlap
-            if ($latitude === null || $longitude === null || $bk->latitude === null || $bk->longitude === null) {
-                return [
-                    'available' => false,
-                    'message'   => 'Waktu acara bertabrakan dengan pesanan lain pada tanggal yang sama.',
-                ];
-            }
-
-            // Hitung jarak (km) menggunakan Haversine
-            $distKm = $this->haversineKm($latitude, $longitude, (float)$bk->latitude, (float)$bk->longitude);
-
-            // Estimasi waktu tempuh (kecepatan 40 km/jam + buffer 15 menit)
-            $travelTimeMinutes = ($distKm / 40) * 60 + 15;
-
-            $existingEnd = $this->toCarbonTime($bk->end_time);
-            $diffMinutes = $existingEnd->diffInMinutes($requestStart, false);  // bisa negatif
-
-            if ($diffMinutes < $travelTimeMinutes) {
-                return [
-                    'available' => false,
-                    'message'   => 'Waktu tempuh (dengan buffer) tidak cukup dari lokasi acara sebelumnya.',
-                ];
-            }
-        }
-
-        // Lolos semua cek
-        return ['available' => true, 'message' => 'Jadwal tersedia.'];
+        return [
+            'available' => true,
+            'message'   => 'Tersedia.',
+        ];
     }
 
-    private function normalizeTime(string $time): string
+    /**
+     * (Opsional) Mode admin:
+     * versi ini boleh menilai jarak/coverage/travel time, digunakan oleh tombol
+     * “Cek & Tetapkan Performer” di admin.
+     */
+    public function checkAdminAvailability(array $input): array
     {
-        // Terima 'H:i' atau 'H:i:s' → kembalikan 'H:i:s'
-        if (preg_match('/^\d{2}:\d{2}:\d{2}$/', $time)) {
-            return $time;
-        }
-        if (preg_match('/^\d{2}:\d{2}$/', $time)) {
-            return $time . ':00';
-        }
-        // fallback: parse fleksibel
-        return Carbon::parse($time)->format('H:i:s');
-    }
-
-    private function toCarbonTime(string $time): Carbon
-    {
-        $t = $this->normalizeTime($time);
-        return Carbon::createFromFormat('H:i:s', $t);
-    }
-
-    private function haversineKm(float $lat1, float $lon1, float $lat2, float $lon2): float
-    {
-        $earthRadius = 6371; // km
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLon = deg2rad($lon2 - $lon1);
-        $a = sin($dLat / 2) ** 2
-            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) ** 2;
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-        return $earthRadius * $c;
+        // mirip di atas, tapi latitude/longitude bisa required
+        // lalu tambahkan perhitungan jarak/coverage dsb sesuai kebutuhan admin
+        // ...
+        return [
+            'available' => true,
+            'message'   => 'Tersedia (admin).',
+        ];
     }
 }

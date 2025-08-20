@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers\Klien;
 
-use Illuminate\Http\Request;
-use App\Services\ScheduleOptimizer;
 use App\Http\Controllers\Controller;
+use App\Services\ScheduleOptimizer;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class ScheduleController extends Controller
 {
@@ -12,38 +13,21 @@ class ScheduleController extends Controller
 
     public function checkSchedule(Request $request)
     {
-        // VALIDASI INPUT
-        $request->validate([
-            'event_id'        => 'required|exists:events,id',
-            'date'            => 'required|date|after_or_equal:today',
-            'start_time'      => 'required|date_format:H:i',   // Optimizer bisa H:i atau H:i:s
-            'end_time'        => 'required|date_format:H:i|after:start_time',
-            'location_detail' => 'required|string',
-            'latitude'        => 'required|numeric',
-            'longitude'       => 'required|numeric',
-        ]);
-
         try {
-            $result = $this->optimizer->checkScheduleAvailability(
-                $request->input('date'),
-                $request->input('start_time'),
-                $request->input('end_time'),
-                (float) $request->input('latitude'),
-                (float) $request->input('longitude'),
-            );
+            // Controller cukup passing seluruh input ke service
+            $result = $this->optimizer->checkClientAvailability($request->all());
 
-            // STRUKTUR RESPON UNTUK JS
-            return response()->json([
-                'available' => (bool) ($result['available'] ?? false),
-                'message'   => (string) ($result['message'] ?? 'Tidak diketahui'),
-            ]);
+            // Selalu 200; kalau mau 422 saat invalid, tinggal ubah baris di bawah:
+            return response()->json($result, 200);
 
+        } catch (ValidationException $e) {
+            // Kalau service melempar ValidationException
+            return response()->json(['errors' => $e->errors()], 422);
         } catch (\Throwable $e) {
-            // Saat debug: kirim pesan error biar gampang dilacak di console
             return response()->json([
                 'available' => false,
                 'message'   => 'Terjadi kesalahan saat memeriksa jadwal.',
-                'error'     => app()->hasDebugModeEnabled() ? $e->getMessage() : null,
+                'error'     => config('app.debug') ? $e->getMessage() : null,
             ], 500);
         }
     }

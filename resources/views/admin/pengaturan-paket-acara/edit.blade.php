@@ -38,7 +38,6 @@
                     <tr class="bg-gray-100">
                         <th class="border p-2">Peran</th>
                         <th class="border p-2">Jumlah</th>
-                        <th class="border p-2">Unik?</th>
                         <th class="border p-2">Catatan</th>
                         <th class="border p-2">Aksi</th>
                     </tr>
@@ -58,9 +57,6 @@
                             </td>
                             <td class="border p-2">
                                 <input type="number" name="quantity[]" min="1" value="{{ $pr->quantity }}" class="w-full rounded border-gray-300 shadow-sm" required>
-                            </td>
-                            <td class="border p-2 text-center">
-                                <input type="checkbox" name="is_unique[]" value="1" {{ $pr->is_unique ? 'checked' : '' }}>
                             </td>
                             <td class="border p-2">
                                 <input type="text" name="notes[]" value="{{ $pr->notes }}" class="w-full rounded border-gray-300 shadow-sm">
