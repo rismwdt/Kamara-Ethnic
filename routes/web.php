@@ -53,7 +53,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::resource('pengaturan-paket-acara', PerformerRequirementController::class)->except(['show']);
     Route::delete('pengaturan-paket-acara/event/{event}', [PerformerRequirementController::class,'destroyByEvent'])
     ->name('pengaturan-paket-acara.destroy-event');
-    // Route::get('rekap-kebutuhan', [RecapController::class, 'index'])->name('rekap.index');
     Route::get('optimasi-jadwal', [OptimasiJadwalController::class, 'index'])->name('optimasi.index');
 });
 

@@ -121,14 +121,16 @@ class SchedulerService
             foreach ($chosen as $p) {
                 $payload[$p->id] = [
                     'is_external'         => $p->is_external ? 1 : 0,
+                    // eksternal masih "tertunda" sampai dikonfirmasi,
+                    // namun tidak menghalangi status booking menjadi "diterima" jika semua peran terpenuhi
                     'confirmation_status' => $p->is_external ? 'tertunda' : 'dikonfirmasi',
-                    'agreed_rate'         => null, // belum dipakai
+                    'agreed_rate'         => null, // opsional: honor yang disepakati
                 ];
             }
             $booking->performers()->syncWithoutDetaching($payload);
 
-            $hasExternal      = collect($chosen)->contains(fn($x) => (bool)$x->is_external);
-            $booking->status  = $hasExternal ? 'tertunda' : 'diterima';
+            // ✔️ Revisi aturan: peran lengkap => booking DITERIMA (meski ada eksternal)
+            $booking->status = 'diterima';
             $booking->save();
         });
 
@@ -241,14 +243,14 @@ class SchedulerService
                 $payload[$p->id] = [
                     'is_external'         => $p->is_external ? 1 : 0,
                     'confirmation_status' => $p->is_external ? 'tertunda' : 'dikonfirmasi',
-                    'agreed_rate'         => null, // belum dipakai
+                    'agreed_rate'         => null,
                 ];
             }
 
             $bookingSaved->performers()->syncWithoutDetaching($payload);
 
-            $hasExternal          = collect($chosen)->contains(fn($x) => (bool)$x->is_external);
-            $bookingSaved->status = $hasExternal ? 'tertunda' : 'diterima';
+            // ✔️ Revisi aturan: peran lengkap => booking DITERIMA (meski ada eksternal)
+            $bookingSaved->status = 'diterima';
             $bookingSaved->save();
         });
 
@@ -390,13 +392,13 @@ class SchedulerService
                         $payload[$p->id] = [
                             'is_external'         => $p->is_external ? 1 : 0,
                             'confirmation_status' => $p->is_external ? 'tertunda' : 'dikonfirmasi',
-                            'agreed_rate'         => null, // belum dipakai
+                            'agreed_rate'         => null,
                         ];
                     }
                     $booking->performers()->syncWithoutDetaching($payload);
 
-                    $hasExternal     = collect($chosen)->contains(fn($x) => (bool)$x->is_external);
-                    $booking->status = $hasExternal ? 'tertunda' : 'diterima';
+                    // ✔️ Revisi aturan di mode batch: peran lengkap ⇒ DITERIMA
+                    $booking->status = 'diterima';
                 } else {
                     $booking->status = 'ditolak';
                 }

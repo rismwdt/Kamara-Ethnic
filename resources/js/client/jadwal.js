@@ -8,6 +8,87 @@ document.addEventListener('DOMContentLoaded', function () {
     const latEl         = document.getElementById('latitude');
     const lonEl         = document.getElementById('longitude');
 
+    /** ===================== HELPER MODAL SUGGESTION ===================== */
+    // panggil ini saat response available=false
+    function openBentrokModal({pickedText = '', reason = '', suggestions = []}, onPick) {
+  // pastikan modal jadwal tertutup dulu agar tidak numpuk
+  window.dispatchEvent(new CustomEvent('close-modal', { detail: 'modal-jadwal' }));
+
+  const pickedEl = document.getElementById('jadwal-bentrok-picked');
+  if (pickedEl) pickedEl.textContent = pickedText || '';
+
+  const reasonEl = document.getElementById('jadwal-bentrok-reason');
+  if (reasonEl) reasonEl.textContent = reason || '';
+
+  const ul = document.getElementById('jadwal-alternatif-list');
+  if (ul) {
+    ul.innerHTML = '';
+
+    if (Array.isArray(suggestions) && suggestions.length) {
+      suggestions.forEach(s => {
+        const li = document.createElement('li');
+        li.className = 'cursor-pointer hover:underline';
+        const label = s.label || ((s.start || '') + ' - ' + (s.end || ''));
+        li.textContent = label;
+
+        li.addEventListener('click', () => {
+          // 1) isi form jam dari pilihan user
+          try { onPick && onPick(s); } catch (e) {}
+
+          // 2) tutup modal bentrok
+          window.dispatchEvent(new CustomEvent('close-modal', { detail: 'modal-jadwal-bentrok' }));
+
+          // 3) buka kembali modal cek jadwal
+          window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-jadwal' }));
+
+          // 4) (opsional) langsung fokuskan ke tombol cek / auto-klik cek
+          // document.getElementById('cek-jadwal-button')?.focus();
+          // document.getElementById('cek-jadwal-button')?.click();
+        });
+
+        ul.appendChild(li);
+      });
+    } else {
+      ul.innerHTML = '<li class="text-gray-500">Tidak ada slot alternatif yang cocok pada hari ini.</li>';
+    }
+  }
+
+  // buka modal bentrok
+  window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-jadwal-bentrok' }));
+}
+
+    /** =================== END HELPER MODAL SUGGESTION =================== */
+
+    // expose opsional ke global bila butuh panggil manual dari elemen lain
+    window.cekJadwalKlien = async function (payload) {
+        const res = await fetch(window.ENDPOINTS.checkSchedule, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': window.ENDPOINTS.csrf
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (res.redirected) { window.location.href = res.url; return; }
+
+        const data = await res.json();
+
+        if (data.available) {
+            alert('Tersedia. Silakan lanjutkan.');
+        } else {
+            openBentrokModal({
+                pickedText: (payload.date || '') + ' ' + (payload.start_time || '') + ' - ' + (payload.end_time || ''),
+                reason: data.reason || data.message || 'Bentrok dengan jadwal lain.',
+                suggestions: data.suggestions || []
+            }, (s) => {
+                const startEl = document.getElementById('start_time');
+                const endEl   = document.getElementById('end_time');
+                if (startEl && endEl) { startEl.value = s.start; endEl.value = s.end; }
+            });
+        }
+    };
+
     function toNumber(val) {
         if (typeof val === 'number') return val;
         return Number(String(val || '').replace(/[^\d]/g, '')) || 0;
@@ -92,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // === TOMBOL PESAN ===
-    const btnsPesan = document.querySelectorAll('.btnPesanSekarang'); // pastikan class ini ada di tombol
+    const btnsPesan = document.querySelectorAll('.btnPesanSekarang');
     if (btnsPesan && btnsPesan.length) {
         btnsPesan.forEach(function (button) {
             button.addEventListener('click', function () {
@@ -104,7 +185,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const start    = button.getAttribute('data-start') || '';
                 const end      = button.getAttribute('data-end')   || '';
 
-                // set event_id di modal Jadwal (by name dan by id)
+                // set event_id di modal Jadwal (by name & id)
                 const formJ = document.getElementById('formJadwal');
                 if (formJ) {
                     const byName = formJ.querySelector('input[name="event_id"]');
@@ -113,12 +194,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 const byId = document.getElementById('event_id_input');
                 if (byId) byId.value = eventId;
 
-                // prefill waktu kalau disediakan di tombol
+                // prefill waktu jika ada
                 if (date)  (document.getElementById('date')       || {}).value = date;
                 if (start) (document.getElementById('start_time') || {}).value = start;
                 if (end)   (document.getElementById('end_time')   || {}).value = end;
 
-                // init peta sekali
+                // init peta
                 setTimeout(function () {
                     if (!map) {
                         map = L.map('map').setView([-6.200000, 106.816666], 12);
@@ -131,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }, 300);
 
-                // simpan harga default untuk DP (dipakai pesanan.js)
+                // simpan harga untuk DP (dipakai file lain)
                 window._dataPesanan = Object.assign({}, window._dataPesanan, { price });
 
                 // buka modal jadwal
@@ -140,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // === CEK JADWAL ===
+    // === CEK JADWAL (FormData) ===
     const cekBtn = document.getElementById('cek-jadwal-button');
     if (cekBtn) {
         cekBtn.addEventListener('click', function (e) {
@@ -178,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const priceFromInput = toNumber((document.getElementById('event_price') || {}).value || 0);
                     const price          = priceFromBtn > 0 ? priceFromBtn : priceFromInput;
 
-                    // simpan untuk pesanan.js hitung DP
+                    // simpan untuk DP
                     window._dataPesanan = {
                         eventId:   formData.get('event_id'),
                         tanggal:   formData.get('date'),
@@ -190,7 +271,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         price:     price
                     };
 
-                    // isi form pesanan
+                    // isi form pesanan (modal berikutnya)
                     const formPesanan = document.getElementById('formPesanan');
                     if (formPesanan) {
                         const setVal = (sel, val) => { const el = formPesanan.querySelector(sel); if (el) el.value = val; };
@@ -204,23 +285,28 @@ document.addEventListener('DOMContentLoaded', function () {
                         setVal('input[name="longitude"]',  window._dataPesanan.longitude);
                         setVal('input[name="price"]',      price);
                     }
-                    console.log('[pesanan prefill]', {
-  eventId: window._dataPesanan.eventId,
-  date:    window._dataPesanan.tanggal,
-  start:   window._dataPesanan.mulai,
-  end:     window._dataPesanan.selesai
-});
 
-
-                    // buka modal pesanan (pesanan.js akan hitung DP)
+                    // buka modal pesanan
                     window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-pesanan' }));
-
                     // tutup modal jadwal
                     window.dispatchEvent(new CustomEvent('close-modal', { detail: 'modal-jadwal' }));
                 } else {
-                    const p = document.getElementById('jadwal-bentrok-reason');
-                    if (p && data && data.message) p.textContent = data.message;
-                    window.dispatchEvent(new CustomEvent('open-modal', { detail: 'modal-jadwal-bentrok' }));
+                    // tampilkan modal alternatif
+                    const pickedText = (formData.get('date') || '') + ' ' +
+                                       (formData.get('start_time') || '') + ' - ' +
+                                       (formData.get('end_time') || '');
+                    openBentrokModal({
+                        pickedText,
+                        reason: (data && (data.reason || data.message)) ? (data.reason || data.message) : 'Bentrok dengan jadwal lain.',
+                        suggestions: (data && data.suggestions) ? data.suggestions : []
+                    }, (s) => {
+                        const startEl = document.getElementById('start_time');
+                        const endEl   = document.getElementById('end_time');
+                        if (startEl && endEl) {
+                            startEl.value = s.start;
+                            endEl.value   = s.end;
+                        }
+                    });
                 }
             })
             .catch(function (error) {

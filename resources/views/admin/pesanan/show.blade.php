@@ -162,11 +162,11 @@
                                             @if($performer->pivot?->is_external)
                                                 <span class="ml-2 text-xs px-2 py-0.5 rounded bg-purple-100 text-purple-800">Eksternal</span>
                                             @endif
-                                            @if($performer->pivot?->confirmation_status)
+                                            {{-- @if($performer->pivot?->confirmation_status)
                                                 <span class="ml-2 text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-700">
                                                     {{ $performer->pivot->confirmation_status }}
                                                 </span>
-                                            @endif
+                                            @endif --}}
                                         </li>
                                     @endforeach
                                 </ul>

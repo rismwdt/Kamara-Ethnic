@@ -16,7 +16,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
         integrity="..." crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-    <!-- CSS & JS -->
+    <script>
+    window.ENDPOINTS = {
+        checkSchedule: "{{ route('cek-jadwal') }}",
+        csrf: "{{ csrf_token() }}"
+    };
+    </script>
+
     @vite(['resources/css/app.css', 'resources/js/client.js'])
 
     <script src="//unpkg.com/alpinejs" defer></script>
