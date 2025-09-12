@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 19, 2025 at 02:17 PM
--- Server version: 8.4.3
--- PHP Version: 8.3.16
+-- Waktu pembuatan: 08 Sep 2025 pada 06.04
+-- Versi server: 8.4.3
+-- Versi PHP: 8.3.16
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -24,12 +24,13 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `bookings`
+-- Struktur dari tabel `bookings`
 --
 
 CREATE TABLE `bookings` (
   `id` bigint UNSIGNED NOT NULL,
   `booking_code` varchar(15) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `event_type` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `user_id` bigint UNSIGNED DEFAULT NULL,
   `event_id` bigint UNSIGNED NOT NULL,
   `price` bigint NOT NULL DEFAULT '0',
@@ -41,13 +42,15 @@ CREATE TABLE `bookings` (
   `latitude` decimal(9,6) DEFAULT NULL,
   `longitude` decimal(9,6) DEFAULT NULL,
   `client_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `event_name` varchar(120) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `male_parents` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `female_parents` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `email` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `nuance` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `location_photo` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `image` varchar(191) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `image` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `notes` text COLLATE utf8mb4_unicode_ci,
   `priority` enum('normal','darurat') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'normal',
   `is_family` tinyint(1) NOT NULL DEFAULT '0',
@@ -57,30 +60,30 @@ CREATE TABLE `bookings` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `bookings`
+-- Dumping data untuk tabel `bookings`
 --
 
-INSERT INTO `bookings` (`id`, `booking_code`, `user_id`, `event_id`, `price`, `dp`, `date`, `start_time`, `end_time`, `location_detail`, `latitude`, `longitude`, `client_name`, `male_parents`, `female_parents`, `phone`, `email`, `nuance`, `location_photo`, `image`, `notes`, `priority`, `is_family`, `status`, `created_at`, `updated_at`) VALUES
-(107, 'BK2508134WCP', 5, 3, 0, 0, '2025-08-22', '09:00:00', '11:00:00', 'Gedung Merdeka, Jl. Asia Afrika No.80, Bandung', -6.918200, 107.609500, 'Onami & Aprilla', 'Joko & Mira', 'Nina & Ardi', '081267890123', 'onami@example.com', 'Pernikahan modern', 'location_photos/photo9.jpg', 'image/photo9.jpg', 'Butuh lighting bagus', 'normal', 0, 'diterima', '2025-08-13 07:52:22', '2025-08-13 07:55:32'),
-(108, 'BK250813ZTKX', 5, 3, 0, 0, '2025-08-22', '13:00:00', '15:00:00', 'Trans Luxury Hotel, Jl. Gatot Subroto No.45, Bandung', -6.910500, 107.610000, 'Hyuni & Lola', 'Budi & Ani', 'Sari & Tono', '081278901234', 'hyuni@example.com', 'Pernikahan tradisional', 'location_photos/photo10.jpg', 'image/photo10.jpg', 'Butuh dekorasi natural', 'normal', 0, 'diterima', '2025-08-13 07:52:22', '2025-08-13 07:55:32'),
-(110, 'BK250814CISH', 5, 1, 0, 0, '2025-08-23', '09:00:00', '11:00:00', 'Ballroom Aston, Jl. Asia Afrika No.10, Bandung', -6.920100, 107.610200, 'Alya & Fajar', 'Riko & Lila', 'Maya & Beni', '081300112233', 'alya@example.com', 'Pernikahan modern', 'location_photos/photo11.jpg', 'image/photo11.jpg', 'MC lucu dan interaktif', 'normal', 0, 'diterima', '2025-08-14 02:23:59', '2025-08-14 03:12:16'),
-(111, 'BK2508147MUS', 3, 2, 0, 0, '2025-08-23', '12:00:00', '14:00:00', 'Gedung Merdeka 2, Jl. Merdeka No.50, Bandung', -6.918500, 107.611000, 'Dina & Rian', 'Joko & Rina', 'Siti & Agus', '081311223344', 'dina@example.com', 'Pernikahan tradisional', 'location_photos/photo12.jpg', 'image/photo12.jpg', 'Butuh band akustik', 'normal', 0, 'diterima', '2025-08-14 02:23:59', '2025-08-14 03:12:16'),
-(112, 'BK250814D1DS', 9, 3, 0, 0, '2025-08-24', '08:30:00', '10:30:00', 'Hotel Savoy Homann, Jl. Asia Afrika No.120, Bandung', -6.917200, 107.608800, 'Nadia & Aldi', 'Budi & Sari', 'Tina & Eko', '081322334455', 'nadia@example.com', 'Pernikahan modern', 'location_photos/photo13.jpg', 'image/photo13.jpg', 'Minta MC lucu', 'normal', 0, 'diterima', '2025-08-14 02:23:59', '2025-08-14 03:12:16'),
-(113, 'BK250814AWPG', 4, 4, 0, 0, '2025-08-24', '11:00:00', '13:00:00', 'Gedung Trisakti 2, Jl. Setiabudi No.110, Bandung', -6.916800, 107.609700, 'Riko & Livia', 'Agus & Lilis', 'Rina & Eko', '081333445566', 'riko@example.com', 'Pernikahan tradisional', 'location_photos/photo14.jpg', 'image/photo14.jpg', 'Butuh dekorasi minimalis', 'normal', 0, 'diterima', '2025-08-14 02:23:59', '2025-08-14 03:12:16'),
-(114, 'BK250814MXDZ', 5, 1, 0, 0, '2025-08-25', '09:00:00', '11:00:00', 'Hotel Grand Preanger, Jl. Asia Afrika No.77, Bandung', -6.919000, 107.612000, 'Hana & Ardi', 'Adi & Lita', 'Rina & Budi', '081344556677', 'hana@example.com', 'Pernikahan modern', 'location_photos/photo15.jpg', 'image/photo15.jpg', 'MC interaktif, musik akustik', 'normal', 0, 'diterima', '2025-08-14 03:24:33', '2025-08-14 03:25:14'),
-(115, 'BK250814F9XG', 4, 2, 0, 0, '2025-08-25', '12:00:00', '14:00:00', 'Gedung Merdeka 3, Jl. Merdeka No.60, Bandung', -6.918200, 107.611500, 'Maya & Fikri', 'Joko & Siti', 'Dina & Agus', '081355667788', 'maya@example.com', 'Pernikahan tradisional', 'location_photos/photo16.jpg', 'image/photo16.jpg', 'Dekorasi alami, band tradisional', 'normal', 0, 'diterima', '2025-08-14 03:24:33', '2025-08-14 03:25:14'),
-(116, 'BK250814EUBZ', 4, 3, 0, 0, '2025-08-26', '08:30:00', '10:30:00', 'Gedung Sate, Jl. Diponegoro No.30, Bandung', -6.917500, 107.609000, 'Lina & Dewa', 'Budi & Ani', 'Tina & Ardi', '081366778899', 'lina@example.com', 'Pernikahan modern', 'location_photos/photo17.jpg', 'image/photo17.jpg', 'MC lucu, lighting bagus', 'normal', 0, 'diterima', '2025-08-14 03:24:33', '2025-08-14 03:25:14'),
-(117, 'BK250814BTZM', 3, 4, 0, 0, '2025-08-26', '11:00:00', '13:00:00', 'Ballroom Aston 2, Jl. Asia Afrika No.15, Bandung', -6.916000, 107.610800, 'Rafi & Selvi', 'Agus & Lilis', 'Rina & Eko', '081377889900', 'rafi@example.com', 'Pernikahan tradisional', 'location_photos/photo18.jpg', 'image/photo18.jpg', 'Butuh dekorasi minimalis dan band akustik', 'normal', 0, 'diterima', '2025-08-14 03:24:33', '2025-08-14 03:25:14'),
-(124, 'BK250814Y1UL', 7, 1, 0, 0, '2025-08-28', '09:00:00', '11:00:00', 'Hotel Grand Preanger, Jl. Asia Afrika No.81, Bandung', -6.921860, 107.606940, 'Hana & Ardi', 'Adi & Lita', 'Rina & Budi', '081344556677', 'hana@example.com', 'Pernikahan modern', 'location_photos/photo15.jpg', 'image/photo15.jpg', 'MC interaktif, musik akustik', 'normal', 0, 'diterima', '2025-08-14 14:26:34', '2025-08-14 16:08:45'),
-(135, 'BK2508171Y6P', 5, 2, 0, 0, '2025-09-07', '10:18:00', '12:18:00', 'Alun-Alun Bandung, Balonggede, Regol, Kota Bandung, Jawa Barat, Jawa, Indonesia', -6.921678, 107.607151, 'Sonia & Joshua', 'Ujang & Nana', 'Agus dan Warni', '0895329252292', 'sonia@gmail.com', 'Hijau', 'location_photos/IYRWEfgFXrIhJnYMvVV2O5ZB0e6uxtChfyey0Drj.png', 'image/aAYtcM8DyMr81aPv1mqAJQ6ppoEkPWJZCIAzj6Qz.png', NULL, 'normal', 0, 'diterima', '2025-08-17 14:20:39', '2025-08-17 17:28:51'),
-(137, 'BK250818065Q', 3, 3, 4000000, 2000000, '2025-09-01', '08:00:00', '09:30:00', 'Sangkuriang, Gang Saad, Kotamas, Cimahi, Jawa Barat, Jawa, 40526, Indonesia', -6.868951, 107.536471, 'Yati dan Yuda', 'Nana dan Amin', 'Hida dan Ujang', '0897426613813', 'santi@gmail.com', 'pink', NULL, 'image/JqK4hps2TXPz6FADeelPhfa20RcCoYSBZkraanQ3.jpg', NULL, 'normal', 0, 'diterima', '2025-08-18 14:58:28', '2025-08-18 14:58:53'),
-(138, 'BK250818LGJE', 5, 1, 3250000, 1625000, '2025-09-05', '10:30:00', '12:00:00', 'Jalan Singosari Raya, Melong, Cimahi, Jawa Barat, Jawa, 40535, Indonesia (Lat: -6.916292, Lon: 107.5597306)', -6.916292, 107.559731, 'Meila dan M.Salahuddin', 'Ujang & Nana', 'Alex & Nia', '089564615487', 'sonia@gmail.com', 'Ungu', NULL, 'image/Mm0FYmEAGhIW1sFKY7NCDjjXd3KbGtpWLO2dYUVO.jpg', NULL, 'normal', 0, 'diterima', '2025-08-18 15:57:44', '2025-08-18 15:58:01'),
-(139, 'BK250819ZERT', 5, 1, 3250000, 1625000, '2025-08-30', '06:30:00', '08:00:00', 'Rancabolang, Jalan Soekarno-Hatta, Sekejati, Buahbatu, Kota Bandung, Jawa Barat, Jawa, 40286, Indonesia', -6.939327, 107.663316, 'Meila dan M.Salahuddin', 'Ujang & Nana', 'Agus dan Warni', '089564615487', 'sonia@gmail.com', 'Pink', NULL, 'image/ZxC06xuISS4Pp0zMxbg9KrRQN97BreUGEvOVAyZp.jpg', NULL, 'normal', 0, 'tertunda', '2025-08-19 06:18:18', '2025-08-19 06:18:18');
+INSERT INTO `bookings` (`id`, `booking_code`, `event_type`, `user_id`, `event_id`, `price`, `dp`, `date`, `start_time`, `end_time`, `location_detail`, `latitude`, `longitude`, `client_name`, `event_name`, `male_parents`, `female_parents`, `phone`, `email`, `nuance`, `location_photo`, `image`, `description`, `notes`, `priority`, `is_family`, `status`, `created_at`, `updated_at`) VALUES
+(108, 'BK250813ZTKX', NULL, 5, 3, 0, 0, '2025-08-22', '13:00:00', '15:00:00', 'Trans Luxury Hotel, Jl. Gatot Subroto No.45, Bandung', -6.910500, 107.610000, 'Hyuni & Lola', NULL, 'Budi & Ani', 'Sari & Tono', '081278901234', 'hyuni@example.com', 'Pernikahan tradisional', 'location_photos/photo10.jpg', 'image/photo10.jpg', NULL, 'Butuh dekorasi natural', 'normal', 0, 'diterima', '2025-08-13 07:52:22', '2025-08-21 09:33:04'),
+(110, 'BK250814CISH', NULL, 5, 1, 0, 0, '2025-08-23', '09:00:00', '11:00:00', 'Ballroom Aston, Jl. Asia Afrika No.10, Bandung', -6.920100, 107.610200, 'Alya & Fajar', NULL, 'Riko & Lila', 'Maya & Beni', '081300112233', 'alya@example.com', 'Pernikahan modern', 'location_photos/photo11.jpg', 'image/photo11.jpg', NULL, 'MC lucu dan interaktif', 'normal', 0, 'diterima', '2025-08-14 02:23:59', '2025-08-21 09:39:44'),
+(112, 'BK250814D1DS', NULL, 9, 3, 0, 0, '2025-08-24', '08:30:00', '10:30:00', 'Hotel Savoy Homann, Jl. Asia Afrika No.120, Bandung', -6.917200, 107.608800, 'Nadia & Aldi', NULL, 'Budi & Sari', 'Tina & Eko', '081322334455', 'nadia@example.com', 'Pernikahan modern', 'location_photos/photo13.jpg', 'image/photo13.jpg', NULL, 'Minta MC lucu', 'normal', 0, 'diterima', '2025-08-14 02:23:59', '2025-08-21 09:41:30'),
+(113, 'BK250814AWPG', NULL, 4, 4, 0, 0, '2025-08-24', '11:00:00', '13:00:00', 'Gedung Trisakti 2, Jl. Setiabudi No.110, Bandung', -6.916800, 107.609700, 'Riko & Livia', NULL, 'Agus & Lilis', 'Rina & Eko', '081333445566', 'riko@example.com', 'Pernikahan tradisional', 'location_photos/photo14.jpg', 'image/photo14.jpg', NULL, 'Butuh dekorasi minimalis', 'normal', 0, 'diterima', '2025-08-14 02:23:59', '2025-08-21 12:28:36'),
+(114, 'BK250814MXDZ', NULL, 5, 1, 0, 0, '2025-08-25', '09:00:00', '11:00:00', 'Hotel Grand Preanger, Jl. Asia Afrika No.77, Bandung', -6.919000, 107.612000, 'Hana & Ardi', NULL, 'Adi & Lita', 'Rina & Budi', '081344556677', 'hana@example.com', 'Pernikahan modern', 'location_photos/photo15.jpg', 'image/photo15.jpg', NULL, 'MC interaktif, musik akustik', 'normal', 0, 'diterima', '2025-08-14 03:24:33', '2025-08-21 10:04:09'),
+(135, 'BK2508171Y6P', NULL, 5, 2, 0, 0, '2025-09-07', '10:18:00', '12:18:00', 'Alun-Alun Bandung, Balonggede, Regol, Kota Bandung, Jawa Barat, Jawa, Indonesia', -6.921678, 107.607151, 'Sonia & Joshua', NULL, 'Ujang & Nana', 'Agus dan Warni', '0895329252292', 'sonia@gmail.com', 'Hijau', 'location_photos/IYRWEfgFXrIhJnYMvVV2O5ZB0e6uxtChfyey0Drj.png', 'image/aAYtcM8DyMr81aPv1mqAJQ6ppoEkPWJZCIAzj6Qz.png', NULL, NULL, 'normal', 0, 'tertunda', '2025-08-17 14:20:39', '2025-08-17 17:28:51'),
+(137, 'BK250818065Q', NULL, 3, 3, 4000000, 2000000, '2025-09-01', '08:00:00', '09:30:00', 'Sangkuriang, Gang Saad, Kotamas, Cimahi, Jawa Barat, Jawa, 40526, Indonesia', -6.868951, 107.536471, 'Yati dan Yuda', NULL, 'Nana dan Amin', 'Hida dan Ujang', '0897426613813', 'santi@gmail.com', 'pink', NULL, 'image/JqK4hps2TXPz6FADeelPhfa20RcCoYSBZkraanQ3.jpg', NULL, NULL, 'normal', 0, 'tertunda', '2025-08-18 14:58:28', '2025-08-18 14:58:53'),
+(138, 'BK250818LGJE', NULL, 5, 1, 3250000, 1625000, '2025-09-05', '10:30:00', '12:00:00', 'Jalan Singosari Raya, Melong, Cimahi, Jawa Barat, Jawa, 40535, Indonesia (Lat: -6.916292, Lon: 107.5597306)', -6.916292, 107.559731, 'Meila dan M.Salahuddin', NULL, 'Ujang & Nana', 'Alex & Nia', '089564615487', 'sonia@gmail.com', 'Ungu', NULL, 'image/Mm0FYmEAGhIW1sFKY7NCDjjXd3KbGtpWLO2dYUVO.jpg', NULL, NULL, 'normal', 0, 'tertunda', '2025-08-18 15:57:44', '2025-08-18 15:58:01'),
+(139, 'BK250819ZERT', NULL, 5, 1, 3250000, 1625000, '2025-08-30', '06:30:00', '08:00:00', 'Rancabolang, Jalan Soekarno-Hatta, Sekejati, Buahbatu, Kota Bandung, Jawa Barat, Jawa, 40286, Indonesia', -6.939327, 107.663316, 'Meila dan M.Salahuddin', NULL, 'Ujang & Nana', 'Agus dan Warni', '089564615487', 'sonia@gmail.com', 'Pink', NULL, 'image/ZxC06xuISS4Pp0zMxbg9KrRQN97BreUGEvOVAyZp.jpg', NULL, NULL, 'normal', 0, 'diterima', '2025-08-19 06:18:18', '2025-08-25 06:11:44'),
+(143, 'BK250825MQRB', 'khitan', 3, 1, 3250000, 1625000, '2025-08-30', '10:00:00', '11:00:00', 'Sangkuriang, Gang Saad, Kotamas, Cimahi, Jawa Barat, Jawa, 40526, Indonesia', -6.868951, 107.536471, 'Santi', 'Yuda', NULL, NULL, '089564615487', 'santi@gmail.com', 'Hijau', NULL, 'payment_proofs/PnjgOnDqRJD874Ym0CTqIy9lpKfVrc7zV7RSlb00.jpg', NULL, NULL, 'normal', 0, 'tertunda', '2025-08-25 01:53:28', '2025-08-25 01:53:28'),
+(144, 'BK2508254IP5', 'grand_opening', 3, 3, 4000000, 2000000, '2025-08-30', '11:00:00', '13:30:00', 'Grand Hotel Preanger, 81, Jalan Asia Afrika, Braga, Sumur Bandung, Kota Bandung, Jawa Barat, Jawa, 40621, Indonesia', -6.921343, 107.611654, 'Jati', 'Opening Demon Hunter', NULL, NULL, '08565416464', 'santi@gmail.com', 'Biru', NULL, 'payment_proofs/gbGj8oDq4A6QRHXCicIGMXfbMyfsLIXYWevW43U3.jpg', NULL, NULL, 'normal', 0, 'tertunda', '2025-08-25 01:55:57', '2025-08-25 01:55:57'),
+(145, 'BK250825OUO7', 'pernikahan', 3, 4, 2000000, 1000000, '2025-08-30', '08:00:00', '10:00:00', 'Citopeng Sari, Melong, Cimahi, Jawa Barat, Jawa, 40535, Indonesia', -6.913128, 107.565043, 'Santi dan yuda', NULL, 'Ujang & Nana', 'Alex & Nia', '089564615487', 'santi@gmail.com', 'Abu', NULL, 'payment_proofs/VD8IRFkz874iQhLMW9E2hCh630V6ZmB9WovT02TV.jpg', NULL, NULL, 'normal', 0, 'tertunda', '2025-08-25 01:59:26', '2025-08-25 01:59:26'),
+(146, 'BK250825HXXB', 'pernikahan', 5, 2, 3700000, 1850000, '2025-08-31', '07:00:00', '11:00:00', 'Sudirman Grand Ballroom, Jalan Jendral Sudirman, Dunguscariang, Andir, Kota Bandung, Jawa Barat, Jawa, 40211, Indonesia', -6.916833, 107.579692, 'Meila dan M.Salahuddin', NULL, 'Iyan dan Parni', 'Agus dan Warni', '0895329252292', 'sonia@gmail.com', 'Ungu', NULL, 'payment_proofs/QXqTUTSxKcVY3lHA3BiEpILBT777hRd82imJF1Fl.jpg', NULL, NULL, 'normal', 0, 'diterima', '2025-08-25 06:25:48', '2025-08-25 06:29:20'),
+(147, 'BK250825YWRC', 'gathering', 5, 4, 2000000, 1000000, '2025-08-31', '11:00:00', '12:00:00', 'Citopeng Sari 2, Cibeureum, Cimahi, Jawa Barat, Jawa, 40535, Indonesia', -6.912057, 107.563722, 'Santi', 'Keluarga cemara', NULL, NULL, '089564615487', 'sonia@gmail.com', 'Hijau', NULL, 'payment_proofs/VOuJCctXaK9vRncWAvxCoEwPir4KCXW7RNFxVW6s.jpg', NULL, NULL, 'normal', 0, 'diterima', '2025-08-25 06:26:48', '2025-08-25 06:29:34'),
+(148, 'BK250825FZOK', 'grand_opening', 5, 4, 2000000, 1000000, '2025-08-31', '08:27:00', '09:27:00', 'Cimahi, Jawa Barat, Jawa, Indonesia', -6.873153, 107.542310, 'Santi', 'Opening Demon Hunter', NULL, NULL, '081626486541', 'sonia@gmail.com', 'Ungu', NULL, 'payment_proofs/3WgQHI6CiWVCUznUfYgebFtbC2XiCd2obJjzGsbG.jpg', NULL, NULL, 'normal', 0, 'diterima', '2025-08-25 06:27:57', '2025-08-25 06:29:27');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `booking_performers`
+-- Struktur dari tabel `booking_performers`
 --
 
 CREATE TABLE `booking_performers` (
@@ -96,188 +99,90 @@ CREATE TABLE `booking_performers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `booking_performers`
+-- Dumping data untuk tabel `booking_performers`
 --
 
 INSERT INTO `booking_performers` (`id`, `booking_id`, `performer_id`, `performer_role_id`, `is_external`, `confirmation_status`, `agreed_rate`, `created_at`, `updated_at`) VALUES
-(434, 107, 1, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(435, 107, 2, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(436, 107, 3, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(437, 107, 4, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(438, 107, 5, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(439, 107, 6, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(440, 107, 7, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(441, 107, 8, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(442, 107, 9, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(443, 107, 10, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(444, 107, 11, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(445, 107, 12, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(446, 107, 13, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(447, 107, 14, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(448, 107, 15, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(449, 107, 16, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(450, 107, 17, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(451, 107, 18, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(452, 107, 19, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(453, 107, 20, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(454, 108, 1, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(455, 108, 2, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(456, 108, 3, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(457, 108, 4, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(458, 108, 5, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(459, 108, 6, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(460, 108, 7, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(461, 108, 8, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(462, 108, 9, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(463, 108, 10, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(464, 108, 11, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(465, 108, 12, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(466, 108, 13, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(467, 108, 14, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(468, 108, 15, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(469, 108, 16, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(470, 108, 17, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(471, 108, 18, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(472, 108, 19, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(473, 108, 20, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(474, 110, 8, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(475, 110, 10, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(476, 110, 7, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(477, 110, 5, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(478, 110, 6, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(479, 110, 9, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(480, 110, 11, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(481, 110, 12, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(482, 110, 1, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(483, 110, 2, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(484, 110, 3, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(485, 110, 4, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(486, 111, 8, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(487, 111, 10, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(488, 111, 7, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(489, 111, 5, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(490, 111, 6, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(491, 111, 9, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(492, 111, 11, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(493, 111, 12, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(494, 111, 1, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(495, 111, 2, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(496, 111, 3, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(497, 111, 4, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(498, 112, 8, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(499, 112, 10, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(500, 112, 7, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(501, 112, 5, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(502, 112, 6, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(503, 112, 9, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(504, 112, 11, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(505, 112, 12, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(506, 112, 1, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(507, 112, 2, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(508, 112, 3, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(509, 112, 4, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(510, 112, 15, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(511, 112, 17, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(512, 113, 12, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(513, 113, 10, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(514, 113, 11, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(515, 114, 8, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(516, 114, 10, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(517, 114, 7, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(518, 114, 5, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(519, 114, 6, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(520, 114, 9, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(521, 114, 11, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(522, 114, 12, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(523, 114, 1, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(524, 114, 2, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(525, 114, 3, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(526, 114, 4, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(527, 115, 8, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(528, 115, 10, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(529, 115, 7, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(530, 115, 5, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(531, 115, 6, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(532, 115, 9, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(533, 115, 11, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(534, 115, 12, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(535, 115, 1, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(536, 115, 2, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(537, 115, 3, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(538, 115, 4, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(539, 116, 8, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(540, 116, 10, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(541, 116, 7, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(542, 116, 5, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(543, 116, 6, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(544, 116, 9, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(545, 116, 11, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(546, 116, 12, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(547, 116, 1, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(548, 116, 2, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(549, 116, 3, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(550, 116, 4, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(551, 116, 15, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(552, 116, 17, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(553, 117, 12, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(554, 117, 10, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(555, 117, 11, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(570, 124, 8, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(571, 124, 10, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(572, 124, 7, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(573, 124, 5, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(574, 124, 6, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(575, 124, 9, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(576, 124, 11, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(577, 124, 12, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(578, 124, 1, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(579, 124, 2, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(580, 124, 3, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(581, 124, 4, NULL, 0, 'dikonfirmasi', NULL, NULL, NULL),
-(621, 135, 8, NULL, 0, 'dikonfirmasi', NULL, '2025-08-17 17:28:51', '2025-08-17 17:28:51'),
-(622, 135, 5, NULL, 0, 'dikonfirmasi', NULL, '2025-08-17 17:28:51', '2025-08-17 17:28:51'),
-(623, 135, 6, NULL, 0, 'dikonfirmasi', NULL, '2025-08-17 17:28:51', '2025-08-17 17:28:51'),
-(624, 135, 7, NULL, 0, 'dikonfirmasi', NULL, '2025-08-17 17:28:51', '2025-08-17 17:28:51'),
-(625, 135, 9, NULL, 0, 'dikonfirmasi', NULL, '2025-08-17 17:28:51', '2025-08-17 17:28:51'),
-(626, 135, 28, NULL, 0, 'dikonfirmasi', NULL, '2025-08-17 17:28:51', '2025-08-17 17:28:51'),
-(627, 135, 11, NULL, 0, 'dikonfirmasi', NULL, '2025-08-17 17:28:51', '2025-08-17 17:28:51'),
-(628, 135, 27, NULL, 0, 'dikonfirmasi', NULL, '2025-08-17 17:28:51', '2025-08-17 17:28:51'),
-(629, 135, 4, NULL, 0, 'dikonfirmasi', NULL, '2025-08-17 17:28:51', '2025-08-17 17:28:51'),
-(630, 135, 3, NULL, 0, 'dikonfirmasi', NULL, '2025-08-17 17:28:51', '2025-08-17 17:28:51'),
-(631, 135, 20, NULL, 0, 'dikonfirmasi', NULL, '2025-08-17 17:28:51', '2025-08-17 17:28:51'),
-(632, 135, 2, NULL, 0, 'dikonfirmasi', NULL, '2025-08-17 17:28:51', '2025-08-17 17:28:51'),
-(645, 137, 8, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(646, 137, 5, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(647, 137, 6, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(648, 137, 7, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(649, 137, 9, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(650, 137, 28, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(651, 137, 11, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(652, 137, 27, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(653, 137, 15, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(654, 137, 17, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(655, 137, 4, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(656, 137, 3, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(657, 137, 20, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(658, 137, 2, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 14:58:53', '2025-08-18 14:58:53'),
-(659, 138, 8, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 15:58:01', '2025-08-18 15:58:01'),
-(660, 138, 5, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 15:58:01', '2025-08-18 15:58:01'),
-(661, 138, 6, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 15:58:01', '2025-08-18 15:58:01'),
-(662, 138, 7, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 15:58:01', '2025-08-18 15:58:01'),
-(663, 138, 9, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 15:58:01', '2025-08-18 15:58:01'),
-(664, 138, 28, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 15:58:01', '2025-08-18 15:58:01'),
-(665, 138, 10, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 15:58:01', '2025-08-18 15:58:01'),
-(666, 138, 11, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 15:58:01', '2025-08-18 15:58:01'),
-(667, 138, 27, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 15:58:01', '2025-08-18 15:58:01'),
-(668, 138, 4, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 15:58:01', '2025-08-18 15:58:01'),
-(669, 138, 3, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 15:58:01', '2025-08-18 15:58:01'),
-(670, 138, 20, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 15:58:01', '2025-08-18 15:58:01'),
-(671, 138, 2, NULL, 0, 'dikonfirmasi', NULL, '2025-08-18 15:58:01', '2025-08-18 15:58:01');
+(730, 108, 8, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(731, 108, 5, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(732, 108, 19, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(733, 108, 7, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(734, 108, 9, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(735, 108, 10, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(736, 108, 11, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(737, 108, 12, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(738, 108, 15, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(739, 108, 17, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(740, 108, 1, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(741, 108, 4, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(742, 108, 3, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(743, 108, 20, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:33:04', '2025-08-21 09:33:04'),
+(744, 110, 8, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:39:44', '2025-08-21 09:39:44'),
+(745, 110, 5, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:39:44', '2025-08-21 09:39:44'),
+(746, 110, 6, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:39:44', '2025-08-21 09:39:44'),
+(747, 110, 7, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:39:44', '2025-08-21 09:39:44'),
+(748, 110, 9, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:39:44', '2025-08-21 09:39:44'),
+(750, 110, 10, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:39:44', '2025-08-21 09:39:44'),
+(751, 110, 11, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:39:44', '2025-08-21 09:39:44'),
+(753, 110, 4, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:39:44', '2025-08-21 09:39:44'),
+(754, 110, 3, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:39:44', '2025-08-21 09:39:44'),
+(755, 110, 20, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:39:44', '2025-08-21 09:39:44'),
+(756, 110, 2, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:39:44', '2025-08-21 09:39:44'),
+(769, 112, 8, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:41:30', '2025-08-21 09:41:30'),
+(770, 112, 5, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:41:30', '2025-08-21 09:41:30'),
+(771, 112, 6, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:41:30', '2025-08-21 09:41:30'),
+(772, 112, 7, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:41:30', '2025-08-21 09:41:30'),
+(773, 112, 9, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:41:30', '2025-08-21 09:41:30'),
+(775, 112, 11, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:41:30', '2025-08-21 09:41:30'),
+(777, 112, 15, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:41:30', '2025-08-21 09:41:30'),
+(778, 112, 17, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:41:30', '2025-08-21 09:41:30'),
+(779, 112, 4, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:41:30', '2025-08-21 09:41:30'),
+(780, 112, 3, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:41:30', '2025-08-21 09:41:30'),
+(781, 112, 20, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:41:30', '2025-08-21 09:41:30'),
+(782, 112, 2, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 09:41:30', '2025-08-21 09:41:30'),
+(788, 114, 8, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 10:04:09', '2025-08-21 10:04:09'),
+(789, 114, 5, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 10:04:09', '2025-08-21 10:04:09'),
+(790, 114, 6, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 10:04:09', '2025-08-21 10:04:09'),
+(791, 114, 7, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 10:04:09', '2025-08-21 10:04:09'),
+(792, 114, 9, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 10:04:09', '2025-08-21 10:04:09'),
+(794, 114, 10, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 10:04:09', '2025-08-21 10:04:09'),
+(795, 114, 11, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 10:04:09', '2025-08-21 10:04:09'),
+(797, 114, 4, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 10:04:09', '2025-08-21 10:04:09'),
+(798, 114, 3, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 10:04:09', '2025-08-21 10:04:09'),
+(799, 114, 20, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 10:04:09', '2025-08-21 10:04:09'),
+(800, 114, 2, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 10:04:09', '2025-08-21 10:04:09'),
+(815, 113, 10, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 12:28:36', '2025-08-21 12:28:36'),
+(816, 113, 11, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 12:28:36', '2025-08-21 12:28:36'),
+(817, 113, 12, NULL, 0, 'dikonfirmasi', NULL, '2025-08-21 12:28:36', '2025-08-21 12:28:36'),
+(837, 139, 8, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:11:44', '2025-08-25 06:11:44'),
+(838, 139, 5, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:11:44', '2025-08-25 06:11:44'),
+(839, 139, 6, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:11:44', '2025-08-25 06:11:44'),
+(840, 139, 7, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:11:44', '2025-08-25 06:11:44'),
+(841, 139, 9, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:11:44', '2025-08-25 06:11:44'),
+(842, 139, 10, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:11:44', '2025-08-25 06:11:44'),
+(844, 139, 11, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:11:44', '2025-08-25 06:11:44'),
+(845, 139, 12, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:11:44', '2025-08-25 06:11:44'),
+(846, 139, 4, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:11:44', '2025-08-25 06:11:44'),
+(847, 139, 3, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:11:44', '2025-08-25 06:11:44'),
+(848, 139, 2, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:11:44', '2025-08-25 06:11:44'),
+(849, 139, 1, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:11:44', '2025-08-25 06:11:44'),
+(850, 146, 8, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:29:20', '2025-08-25 06:29:20'),
+(851, 146, 5, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:29:20', '2025-08-25 06:29:20'),
+(852, 146, 6, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:29:20', '2025-08-25 06:29:20'),
+(853, 146, 7, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:29:20', '2025-08-25 06:29:20'),
+(854, 146, 9, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:29:20', '2025-08-25 06:29:20'),
+(855, 146, 10, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:29:20', '2025-08-25 06:29:20'),
+(856, 146, 11, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:29:20', '2025-08-25 06:29:20'),
+(857, 146, 12, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:29:20', '2025-08-25 06:29:20'),
+(858, 146, 4, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:29:20', '2025-08-25 06:29:20'),
+(859, 146, 3, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:29:20', '2025-08-25 06:29:20'),
+(860, 146, 2, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:29:20', '2025-08-25 06:29:20'),
+(861, 146, 1, NULL, 0, 'dikonfirmasi', NULL, '2025-08-25 06:29:20', '2025-08-25 06:29:20');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `cache`
+-- Struktur dari tabel `cache`
 --
 
 CREATE TABLE `cache` (
@@ -287,17 +192,17 @@ CREATE TABLE `cache` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `cache`
+-- Dumping data untuk tabel `cache`
 --
 
 INSERT INTO `cache` (`key`, `value`, `expiration`) VALUES
-('laravel_cache_5c785c036466adea360111aa28563bfd556b5fba', 'i:12;', 1755585000),
-('laravel_cache_5c785c036466adea360111aa28563bfd556b5fba:timer', 'i:1755585000;', 1755585000);
+('laravel_cache_5c785c036466adea360111aa28563bfd556b5fba', 'i:4;', 1756300658),
+('laravel_cache_5c785c036466adea360111aa28563bfd556b5fba:timer', 'i:1756300658;', 1756300658);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `cache_locks`
+-- Struktur dari tabel `cache_locks`
 --
 
 CREATE TABLE `cache_locks` (
@@ -309,7 +214,7 @@ CREATE TABLE `cache_locks` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `events`
+-- Struktur dari tabel `events`
 --
 
 CREATE TABLE `events` (
@@ -325,7 +230,7 @@ CREATE TABLE `events` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `events`
+-- Dumping data untuk tabel `events`
 --
 
 INSERT INTO `events` (`id`, `name`, `price`, `description`, `image`, `type`, `status`, `created_at`, `updated_at`) VALUES
@@ -337,7 +242,7 @@ INSERT INTO `events` (`id`, `name`, `price`, `description`, `image`, `type`, `st
 -- --------------------------------------------------------
 
 --
--- Table structure for table `failed_jobs`
+-- Struktur dari tabel `failed_jobs`
 --
 
 CREATE TABLE `failed_jobs` (
@@ -353,7 +258,7 @@ CREATE TABLE `failed_jobs` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `jobs`
+-- Struktur dari tabel `jobs`
 --
 
 CREATE TABLE `jobs` (
@@ -369,7 +274,7 @@ CREATE TABLE `jobs` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `job_batches`
+-- Struktur dari tabel `job_batches`
 --
 
 CREATE TABLE `job_batches` (
@@ -388,7 +293,7 @@ CREATE TABLE `job_batches` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `migrations`
+-- Struktur dari tabel `migrations`
 --
 
 CREATE TABLE `migrations` (
@@ -398,7 +303,7 @@ CREATE TABLE `migrations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `migrations`
+-- Dumping data untuk tabel `migrations`
 --
 
 INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
@@ -420,7 +325,7 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `model_has_permissions`
+-- Struktur dari tabel `model_has_permissions`
 --
 
 CREATE TABLE `model_has_permissions` (
@@ -432,7 +337,7 @@ CREATE TABLE `model_has_permissions` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `model_has_roles`
+-- Struktur dari tabel `model_has_roles`
 --
 
 CREATE TABLE `model_has_roles` (
@@ -442,7 +347,7 @@ CREATE TABLE `model_has_roles` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `model_has_roles`
+-- Dumping data untuk tabel `model_has_roles`
 --
 
 INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
@@ -455,7 +360,7 @@ INSERT INTO `model_has_roles` (`role_id`, `model_type`, `model_id`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `notifications`
+-- Struktur dari tabel `notifications`
 --
 
 CREATE TABLE `notifications` (
@@ -470,7 +375,7 @@ CREATE TABLE `notifications` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `notifications`
+-- Dumping data untuk tabel `notifications`
 --
 
 INSERT INTO `notifications` (`id`, `type`, `notifiable_type`, `notifiable_id`, `data`, `read_at`, `created_at`, `updated_at`) VALUES
@@ -479,7 +384,7 @@ INSERT INTO `notifications` (`id`, `type`, `notifiable_type`, `notifiable_id`, `
 -- --------------------------------------------------------
 
 --
--- Table structure for table `password_reset_tokens`
+-- Struktur dari tabel `password_reset_tokens`
 --
 
 CREATE TABLE `password_reset_tokens` (
@@ -491,7 +396,7 @@ CREATE TABLE `password_reset_tokens` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `performers`
+-- Struktur dari tabel `performers`
 --
 
 CREATE TABLE `performers` (
@@ -510,7 +415,7 @@ CREATE TABLE `performers` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `performers`
+-- Dumping data untuk tabel `performers`
 --
 
 INSERT INTO `performers` (`id`, `name`, `gender`, `performer_role_id`, `is_active`, `phone`, `account_number`, `bank_name`, `is_external`, `notes`, `created_at`, `updated_at`) VALUES
@@ -528,27 +433,17 @@ INSERT INTO `performers` (`id`, `name`, `gender`, `performer_role_id`, `is_activ
 (12, 'Mamah Nia', 'perempuan', 12, 1, '083873532446', '-', '-', 0, '-', '2025-07-14 21:53:11', '2025-08-17 13:00:10'),
 (13, 'Sonia', 'perempuan', 14, 1, '085813666926', '085813666926', 'DANA', 1, '-', '2025-07-14 21:54:59', '2025-08-17 13:00:25'),
 (14, 'Risma', 'perempuan', 15, 1, '-', '-', '-', 1, NULL, '2025-08-11 06:45:04', '2025-08-17 12:59:03'),
-(15, 'Onami', 'laki-laki', 13, 1, '-', '-', '-', 0, NULL, '2025-08-11 06:45:57', '2025-08-14 03:10:18'),
+(15, 'Onami', 'laki-laki', 13, 1, '-', '-', '-', 1, NULL, '2025-08-11 06:45:57', '2025-08-14 03:10:18'),
 (16, 'hyuni', 'laki-laki', 5, 1, '-', '-', '-', 1, NULL, '2025-08-11 06:47:31', '2025-08-17 12:59:17'),
-(17, 'Aprilla', 'perempuan', 14, 1, '-', '-', '-', 0, NULL, '2025-08-11 06:47:59', '2025-08-14 03:11:06'),
+(17, 'Aprilla', 'perempuan', 14, 1, '-', '-', '-', 1, NULL, '2025-08-11 06:47:59', '2025-08-14 03:11:06'),
 (18, 'Jajang', 'laki-laki', 3, 1, '081626486541', '-', '-', 1, NULL, '2025-08-11 06:49:09', '2025-08-17 12:59:40'),
-(19, 'Dadan', 'laki-laki', 4, 1, '-', '-', '-', 0, NULL, '2025-08-11 06:49:42', '2025-08-14 03:11:28'),
-(20, 'Lola', 'perempuan', 15, 1, '-', '-', '-', 0, NULL, '2025-08-12 15:28:52', '2025-08-14 03:11:38'),
-(21, 'Partner Stage Crew 1', 'lainnya', 7, 1, '-', NULL, NULL, 1, NULL, '2025-08-15 13:54:04', '2025-08-15 13:54:04'),
-(22, 'Partner Stage Crew 2', 'lainnya', 7, 1, '-', NULL, NULL, 1, NULL, '2025-08-15 13:54:04', '2025-08-15 13:54:04'),
-(23, 'Partner Stage Crew 3', 'lainnya', 7, 1, '-', NULL, NULL, 1, NULL, '2025-08-15 13:54:04', '2025-08-15 13:54:04'),
-(24, 'Partner Stage Crew 4', 'lainnya', 7, 1, '-', NULL, NULL, 1, NULL, '2025-08-15 13:54:19', '2025-08-17 17:15:48'),
-(25, 'Partner Pemusik Kacapi', 'lainnya', 10, 1, '-', NULL, NULL, 1, NULL, '2025-08-15 13:54:19', '2025-08-15 13:54:19'),
-(26, 'Partner Pemusik Melodi', 'lainnya', 11, 1, '-', NULL, NULL, 1, NULL, '2025-08-15 13:54:19', '2025-08-15 13:54:19'),
-(27, 'Ani', 'perempuan', 12, 1, '081212345678', NULL, NULL, 0, NULL, '2025-08-15 15:43:24', '2025-08-15 15:47:54'),
-(28, 'Budi', 'laki-laki', 10, 1, '081234567890', NULL, NULL, 0, NULL, '2025-08-15 15:43:35', '2025-08-15 15:43:35'),
-(29, 'Cici (Eksternal)', 'perempuan', 10, 1, NULL, NULL, NULL, 1, NULL, '2025-08-15 15:43:45', '2025-08-15 15:43:45'),
-(31, 'yoni', 'laki-laki', 10, 1, '081626486541', NULL, NULL, 1, NULL, '2025-08-17 17:16:29', '2025-08-17 17:16:29');
+(19, 'Dadan', 'laki-laki', 4, 1, '-', '-', '-', 1, NULL, '2025-08-11 06:49:42', '2025-08-14 03:11:28'),
+(20, 'Lola', 'perempuan', 15, 1, '-', '-', '-', 1, NULL, '2025-08-12 15:28:52', '2025-08-14 03:11:38');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `performer_requirements`
+-- Struktur dari tabel `performer_requirements`
 --
 
 CREATE TABLE `performer_requirements` (
@@ -562,7 +457,7 @@ CREATE TABLE `performer_requirements` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `performer_requirements`
+-- Dumping data untuk tabel `performer_requirements`
 --
 
 INSERT INTO `performer_requirements` (`id`, `event_id`, `performer_role_id`, `quantity`, `notes`, `created_at`, `updated_at`) VALUES
@@ -577,15 +472,6 @@ INSERT INTO `performer_requirements` (`id`, `event_id`, `performer_role_id`, `qu
 (68, 3, 15, 4, 'Pemayang 4 orang', '2025-08-14 03:04:55', '2025-08-14 03:04:55'),
 (69, 3, 13, 1, NULL, '2025-08-14 03:04:55', '2025-08-14 03:04:55'),
 (70, 3, 14, 1, NULL, '2025-08-14 03:04:55', '2025-08-14 03:04:55'),
-(71, 1, 2, 1, NULL, '2025-08-14 03:05:06', '2025-08-14 03:05:06'),
-(72, 1, 10, 2, NULL, '2025-08-14 03:05:06', '2025-08-15 15:45:47'),
-(73, 1, 5, 1, 'Baksa / Payung', '2025-08-14 03:05:06', '2025-08-14 03:05:06'),
-(74, 1, 3, 1, NULL, '2025-08-14 03:05:06', '2025-08-14 03:05:06'),
-(75, 1, 4, 1, NULL, '2025-08-14 03:05:06', '2025-08-14 03:05:06'),
-(76, 1, 8, 1, NULL, '2025-08-14 03:05:06', '2025-08-14 03:05:06'),
-(77, 1, 11, 1, 'Suling/biola', '2025-08-14 03:05:06', '2025-08-14 03:05:06'),
-(78, 1, 12, 1, 'Sinden', '2025-08-14 03:05:06', '2025-08-14 03:05:06'),
-(79, 1, 15, 4, 'Pemayang 4 Orang', '2025-08-14 03:05:06', '2025-08-14 03:05:06'),
 (80, 2, 2, 1, NULL, '2025-08-14 03:05:18', '2025-08-14 03:05:18'),
 (81, 2, 10, 1, NULL, '2025-08-14 03:05:18', '2025-08-14 03:05:18'),
 (82, 2, 5, 1, 'Baksa / Payung', '2025-08-14 03:05:18', '2025-08-14 03:05:18'),
@@ -598,12 +484,21 @@ INSERT INTO `performer_requirements` (`id`, `event_id`, `performer_role_id`, `qu
 (93, 4, 7, 2, NULL, '2025-08-18 08:26:33', '2025-08-18 08:26:33'),
 (94, 4, 10, 1, NULL, '2025-08-18 08:26:33', '2025-08-18 08:26:33'),
 (95, 4, 11, 1, 'Suling', '2025-08-18 08:26:33', '2025-08-18 08:26:33'),
-(96, 4, 12, 1, 'Sinden', '2025-08-18 08:26:33', '2025-08-18 08:26:33');
+(96, 4, 12, 1, 'Sinden', '2025-08-18 08:26:33', '2025-08-18 08:26:33'),
+(97, 1, 2, 1, NULL, '2025-08-29 13:33:21', '2025-08-29 13:33:21'),
+(98, 1, 3, 1, NULL, '2025-08-29 13:33:21', '2025-08-29 13:33:21'),
+(99, 1, 4, 1, NULL, '2025-08-29 13:33:21', '2025-08-29 13:33:21'),
+(100, 1, 5, 1, 'Baksa / Payung', '2025-08-29 13:33:21', '2025-08-29 13:33:21'),
+(101, 1, 8, 1, NULL, '2025-08-29 13:33:21', '2025-08-29 13:33:21'),
+(102, 1, 10, 1, NULL, '2025-08-29 13:33:21', '2025-08-29 13:33:21'),
+(103, 1, 11, 1, 'Suling/biola', '2025-08-29 13:33:21', '2025-08-29 13:33:21'),
+(104, 1, 12, 1, 'Sinden', '2025-08-29 13:33:21', '2025-08-29 13:33:21'),
+(105, 1, 15, 4, 'Pemayang 4 Orang', '2025-08-29 13:33:21', '2025-08-29 13:33:21');
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `performer_roles`
+-- Struktur dari tabel `performer_roles`
 --
 
 CREATE TABLE `performer_roles` (
@@ -614,7 +509,7 @@ CREATE TABLE `performer_roles` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `performer_roles`
+-- Dumping data untuk tabel `performer_roles`
 --
 
 INSERT INTO `performer_roles` (`id`, `name`, `created_at`, `updated_at`) VALUES
@@ -637,7 +532,7 @@ INSERT INTO `performer_roles` (`id`, `name`, `created_at`, `updated_at`) VALUES
 -- --------------------------------------------------------
 
 --
--- Table structure for table `permissions`
+-- Struktur dari tabel `permissions`
 --
 
 CREATE TABLE `permissions` (
@@ -651,7 +546,7 @@ CREATE TABLE `permissions` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `roles`
+-- Struktur dari tabel `roles`
 --
 
 CREATE TABLE `roles` (
@@ -663,7 +558,7 @@ CREATE TABLE `roles` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `roles`
+-- Dumping data untuk tabel `roles`
 --
 
 INSERT INTO `roles` (`id`, `name`, `guard_name`, `created_at`, `updated_at`) VALUES
@@ -673,7 +568,7 @@ INSERT INTO `roles` (`id`, `name`, `guard_name`, `created_at`, `updated_at`) VAL
 -- --------------------------------------------------------
 
 --
--- Table structure for table `role_has_permissions`
+-- Struktur dari tabel `role_has_permissions`
 --
 
 CREATE TABLE `role_has_permissions` (
@@ -684,7 +579,7 @@ CREATE TABLE `role_has_permissions` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `sessions`
+-- Struktur dari tabel `sessions`
 --
 
 CREATE TABLE `sessions` (
@@ -697,18 +592,16 @@ CREATE TABLE `sessions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `sessions`
+-- Dumping data untuk tabel `sessions`
 --
 
 INSERT INTO `sessions` (`id`, `user_id`, `ip_address`, `user_agent`, `payload`, `last_activity`) VALUES
-('GwNLrkwIEyYIzVnpMBZg1CGRI8qDciACsBWTYkC0', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoiVmtUcTZ1R2NBUHE0M1dLVEUzVFdVVURsZGw2Um83S0kyM2Q3T2JwZiI7czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MzU6Imh0dHA6Ly9rYW1hcmEtZXRobmljLnRlc3QvZGFzaGJvYXJkIjt9czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo1MDoibG9naW5fd2ViXzU5YmEzNmFkZGMyYjJmOTQwMTU4MGYwMTRjN2Y1OGVhNGUzMDk4OWQiO2k6MTt9', 1755585042),
-('MBNMWnKIEBwVl1hAoKFykNmXs01qDazE7PkjB9dh', NULL, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 'YToyOntzOjY6Il90b2tlbiI7czo0MDoiMnV4YjM4NWZVVkFDWVU0R0lZRVJ4c0gzY01XTFp6UlNaWmRNR3JGTiI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319fQ==', 1755583541),
-('tiun3eAzHSPL0qAHRT8bwPk39XVb01cj2mgzZ7N8', 5, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoiMU1DTzN2RnA3Z1dFa1plcmxBekFkajNnYkd5ZWR3OUtLUG42azM5VCI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6MjU6Imh0dHA6Ly9rYW1hcmEtZXRobmljLnRlc3QiO31zOjUwOiJsb2dpbl93ZWJfNTliYTM2YWRkYzJiMmY5NDAxNTgwZjAxNGM3ZjU4ZWE0ZTMwOTg5ZCI7aTo1O30=', 1755585105);
+('VidQ9qJj0BzOSn1BZkue4fh2oBKjQGkHUq1ZVUkN', 1, '127.0.0.1', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/139.0.0.0 Safari/537.36', 'YTo0OntzOjY6Il90b2tlbiI7czo0MDoiOU0zanhIVXRWaHRxV0VEVW1zMVpISnFCd2puQnNNcjFxWW43cVVsWCI7czo2OiJfZmxhc2giO2E6Mjp7czozOiJvbGQiO2E6MDp7fXM6MzoibmV3IjthOjA6e319czo5OiJfcHJldmlvdXMiO2E6MTp7czozOiJ1cmwiO3M6NTQ6Imh0dHA6Ly9rYW1hcmEtZXRobmljLnRlc3QvYWRtaW4vcGVuZ2F0dXJhbi1wYWtldC1hY2FyYSI7fXM6NTA6ImxvZ2luX3dlYl81OWJhMzZhZGRjMmIyZjk0MDE1ODBmMDE0YzdmNThlYTRlMzA5ODlkIjtpOjE7fQ==', 1756474403);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `users`
+-- Struktur dari tabel `users`
 --
 
 CREATE TABLE `users` (
@@ -723,7 +616,7 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
--- Dumping data for table `users`
+-- Dumping data untuk tabel `users`
 --
 
 INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `remember_token`, `created_at`, `updated_at`) VALUES
@@ -740,18 +633,18 @@ INSERT INTO `users` (`id`, `name`, `email`, `email_verified_at`, `password`, `re
 --
 
 --
--- Indexes for table `bookings`
+-- Indeks untuk tabel `bookings`
 --
 ALTER TABLE `bookings`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `bookings_booking_code_unique` (`booking_code`),
-  ADD KEY `idx_bookings_date` (`date`),
-  ADD KEY `idx_bookings_date_start` (`date`,`start_time`),
   ADD KEY `fk_bookings_user` (`user_id`),
-  ADD KEY `fk_bookings_event` (`event_id`);
+  ADD KEY `idx_bookings_date_status` (`date`,`status`),
+  ADD KEY `idx_bookings_date_start_time` (`date`,`start_time`),
+  ADD KEY `idx_bookings_event_date` (`event_id`,`date`);
 
 --
--- Indexes for table `booking_performers`
+-- Indeks untuk tabel `booking_performers`
 --
 ALTER TABLE `booking_performers`
   ADD PRIMARY KEY (`id`),
@@ -763,19 +656,19 @@ ALTER TABLE `booking_performers`
   ADD KEY `idx_confirmation_status` (`confirmation_status`);
 
 --
--- Indexes for table `cache`
+-- Indeks untuk tabel `cache`
 --
 ALTER TABLE `cache`
   ADD PRIMARY KEY (`key`);
 
 --
--- Indexes for table `cache_locks`
+-- Indeks untuk tabel `cache_locks`
 --
 ALTER TABLE `cache_locks`
   ADD PRIMARY KEY (`key`);
 
 --
--- Indexes for table `events`
+-- Indeks untuk tabel `events`
 --
 ALTER TABLE `events`
   ADD PRIMARY KEY (`id`),
@@ -783,60 +676,60 @@ ALTER TABLE `events`
   ADD KEY `idx_events_type` (`type`);
 
 --
--- Indexes for table `failed_jobs`
+-- Indeks untuk tabel `failed_jobs`
 --
 ALTER TABLE `failed_jobs`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `failed_jobs_uuid_unique` (`uuid`);
 
 --
--- Indexes for table `jobs`
+-- Indeks untuk tabel `jobs`
 --
 ALTER TABLE `jobs`
   ADD PRIMARY KEY (`id`),
   ADD KEY `jobs_queue_index` (`queue`);
 
 --
--- Indexes for table `job_batches`
+-- Indeks untuk tabel `job_batches`
 --
 ALTER TABLE `job_batches`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `migrations`
+-- Indeks untuk tabel `migrations`
 --
 ALTER TABLE `migrations`
   ADD PRIMARY KEY (`id`);
 
 --
--- Indexes for table `model_has_permissions`
+-- Indeks untuk tabel `model_has_permissions`
 --
 ALTER TABLE `model_has_permissions`
   ADD PRIMARY KEY (`permission_id`,`model_id`,`model_type`),
   ADD KEY `model_has_permissions_model_id_model_type_index` (`model_id`,`model_type`);
 
 --
--- Indexes for table `model_has_roles`
+-- Indeks untuk tabel `model_has_roles`
 --
 ALTER TABLE `model_has_roles`
   ADD PRIMARY KEY (`role_id`,`model_id`,`model_type`),
   ADD KEY `model_has_roles_model_id_model_type_index` (`model_id`,`model_type`);
 
 --
--- Indexes for table `notifications`
+-- Indeks untuk tabel `notifications`
 --
 ALTER TABLE `notifications`
   ADD PRIMARY KEY (`id`),
   ADD KEY `notifications_notifiable_type_notifiable_id_index` (`notifiable_type`,`notifiable_id`);
 
 --
--- Indexes for table `password_reset_tokens`
+-- Indeks untuk tabel `password_reset_tokens`
 --
 ALTER TABLE `password_reset_tokens`
   ADD PRIMARY KEY (`email`);
 
 --
--- Indexes for table `performers`
+-- Indeks untuk tabel `performers`
 --
 ALTER TABLE `performers`
   ADD PRIMARY KEY (`id`),
@@ -844,7 +737,7 @@ ALTER TABLE `performers`
   ADD KEY `idx_performers_active` (`is_active`);
 
 --
--- Indexes for table `performer_requirements`
+-- Indeks untuk tabel `performer_requirements`
 --
 ALTER TABLE `performer_requirements`
   ADD PRIMARY KEY (`id`),
@@ -852,35 +745,35 @@ ALTER TABLE `performer_requirements`
   ADD KEY `performer_requirements_performer_role_id_foreign` (`performer_role_id`);
 
 --
--- Indexes for table `performer_roles`
+-- Indeks untuk tabel `performer_roles`
 --
 ALTER TABLE `performer_roles`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uniq_role_name` (`name`);
 
 --
--- Indexes for table `permissions`
+-- Indeks untuk tabel `permissions`
 --
 ALTER TABLE `permissions`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `permissions_name_guard_name_unique` (`name`,`guard_name`);
 
 --
--- Indexes for table `roles`
+-- Indeks untuk tabel `roles`
 --
 ALTER TABLE `roles`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `roles_name_guard_name_unique` (`name`,`guard_name`);
 
 --
--- Indexes for table `role_has_permissions`
+-- Indeks untuk tabel `role_has_permissions`
 --
 ALTER TABLE `role_has_permissions`
   ADD PRIMARY KEY (`permission_id`,`role_id`),
   ADD KEY `role_has_permissions_role_id_foreign` (`role_id`);
 
 --
--- Indexes for table `sessions`
+-- Indeks untuk tabel `sessions`
 --
 ALTER TABLE `sessions`
   ADD PRIMARY KEY (`id`),
@@ -888,94 +781,94 @@ ALTER TABLE `sessions`
   ADD KEY `sessions_last_activity_index` (`last_activity`);
 
 --
--- Indexes for table `users`
+-- Indeks untuk tabel `users`
 --
 ALTER TABLE `users`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `users_email_unique` (`email`);
 
 --
--- AUTO_INCREMENT for dumped tables
+-- AUTO_INCREMENT untuk tabel yang dibuang
 --
 
 --
--- AUTO_INCREMENT for table `bookings`
+-- AUTO_INCREMENT untuk tabel `bookings`
 --
 ALTER TABLE `bookings`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=140;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=149;
 
 --
--- AUTO_INCREMENT for table `booking_performers`
+-- AUTO_INCREMENT untuk tabel `booking_performers`
 --
 ALTER TABLE `booking_performers`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=672;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=872;
 
 --
--- AUTO_INCREMENT for table `events`
+-- AUTO_INCREMENT untuk tabel `events`
 --
 ALTER TABLE `events`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
--- AUTO_INCREMENT for table `failed_jobs`
+-- AUTO_INCREMENT untuk tabel `failed_jobs`
 --
 ALTER TABLE `failed_jobs`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `jobs`
+-- AUTO_INCREMENT untuk tabel `jobs`
 --
 ALTER TABLE `jobs`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `migrations`
+-- AUTO_INCREMENT untuk tabel `migrations`
 --
 ALTER TABLE `migrations`
   MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
--- AUTO_INCREMENT for table `performers`
+-- AUTO_INCREMENT untuk tabel `performers`
 --
 ALTER TABLE `performers`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
--- AUTO_INCREMENT for table `performer_requirements`
+-- AUTO_INCREMENT untuk tabel `performer_requirements`
 --
 ALTER TABLE `performer_requirements`
-  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=97;
+  MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=106;
 
 --
--- AUTO_INCREMENT for table `performer_roles`
+-- AUTO_INCREMENT untuk tabel `performer_roles`
 --
 ALTER TABLE `performer_roles`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
--- AUTO_INCREMENT for table `permissions`
+-- AUTO_INCREMENT untuk tabel `permissions`
 --
 ALTER TABLE `permissions`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `roles`
+-- AUTO_INCREMENT untuk tabel `roles`
 --
 ALTER TABLE `roles`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- AUTO_INCREMENT for table `users`
+-- AUTO_INCREMENT untuk tabel `users`
 --
 ALTER TABLE `users`
   MODIFY `id` bigint UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
--- Constraints for dumped tables
+-- Ketidakleluasaan untuk tabel pelimpahan (Dumped Tables)
 --
 
 --
--- Constraints for table `bookings`
+-- Ketidakleluasaan untuk tabel `bookings`
 --
 ALTER TABLE `bookings`
   ADD CONSTRAINT `bookings_event_id_foreign` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`) ON DELETE CASCADE,
@@ -984,7 +877,7 @@ ALTER TABLE `bookings`
   ADD CONSTRAINT `fk_bookings_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Constraints for table `booking_performers`
+-- Ketidakleluasaan untuk tabel `booking_performers`
 --
 ALTER TABLE `booking_performers`
   ADD CONSTRAINT `booking_performers_booking_id_foreign` FOREIGN KEY (`booking_id`) REFERENCES `bookings` (`id`) ON DELETE CASCADE,
@@ -993,32 +886,32 @@ ALTER TABLE `booking_performers`
   ADD CONSTRAINT `fk_bp_performer` FOREIGN KEY (`performer_id`) REFERENCES `performers` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `model_has_permissions`
+-- Ketidakleluasaan untuk tabel `model_has_permissions`
 --
 ALTER TABLE `model_has_permissions`
   ADD CONSTRAINT `model_has_permissions_permission_id_foreign` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `model_has_roles`
+-- Ketidakleluasaan untuk tabel `model_has_roles`
 --
 ALTER TABLE `model_has_roles`
   ADD CONSTRAINT `model_has_roles_role_id_foreign` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `performers`
+-- Ketidakleluasaan untuk tabel `performers`
 --
 ALTER TABLE `performers`
   ADD CONSTRAINT `fk_performer_role` FOREIGN KEY (`performer_role_id`) REFERENCES `performer_roles` (`id`);
 
 --
--- Constraints for table `performer_requirements`
+-- Ketidakleluasaan untuk tabel `performer_requirements`
 --
 ALTER TABLE `performer_requirements`
   ADD CONSTRAINT `performer_requirements_event_id_foreign` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `performer_requirements_performer_role_id_foreign` FOREIGN KEY (`performer_role_id`) REFERENCES `performer_roles` (`id`) ON DELETE CASCADE;
 
 --
--- Constraints for table `role_has_permissions`
+-- Ketidakleluasaan untuk tabel `role_has_permissions`
 --
 ALTER TABLE `role_has_permissions`
   ADD CONSTRAINT `role_has_permissions_permission_id_foreign` FOREIGN KEY (`permission_id`) REFERENCES `permissions` (`id`) ON DELETE CASCADE,

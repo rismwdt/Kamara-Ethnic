@@ -13,7 +13,6 @@ class ValidatorController extends Controller
 
     public function cekJadwal(Request $request)
     {
-        // Normalisasi jam dari H:i:s → H:i (agar lolos validasi)
         $start = substr((string)$request->input('start_time', ''), 0, 5);
         $end   = substr((string)$request->input('end_time', ''), 0, 5);
         $request->merge(['start_time' => $start, 'end_time' => $end]);
@@ -30,7 +29,6 @@ class ValidatorController extends Controller
             'assign'     => 'nullable|boolean',
         ]);
 
-        // Konversi "" → null agar tidak menimpa data existing
         $loc = ($validated['location']  ?? null);
         $lat = ($validated['latitude']  ?? null);
         $lng = ($validated['longitude'] ?? null);
@@ -53,23 +51,21 @@ class ValidatorController extends Controller
         $assign
     );
 
-    // tambahkan flag ok agar konsisten di frontend
     $result['ok'] = $result['available'] ?? false;
 
-    // pakai status 200 untuk keduanya (sesuai permintaanmu)
     return response()->json($result, ($result['available'] ?? false) ? 200 : 200);
 
-} catch (ValidationException $e) {
-    return response()->json([
-        'ok'     => false,
-        'errors' => $e->errors(),
-    ], 422);
-} catch (\Throwable $e) {
-    return response()->json([
-        'ok'      => false,
-        'message' => 'Terjadi kesalahan saat memeriksa jadwal.',
-        'error'   => config('app.debug') ? $e->getMessage() : null,
-    ], 500);
-}
+        } catch (ValidationException $e) {
+            return response()->json([
+                'ok'     => false,
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Terjadi kesalahan saat memeriksa jadwal.',
+                'error'   => config('app.debug') ? $e->getMessage() : null,
+            ], 500);
+        }
     }
 }

@@ -7,17 +7,12 @@ use Illuminate\Validation\ValidationException;
 
 class ScheduleValidator
 {
-    /** ====== Konfigurasi sederhana (ubah sesuai kebijakan) ====== */
     private const MAX_TASKS_PER_DAY          = 2;    // batas maksimal tugas per performer per hari
     private const DEFAULT_SPEED_KMH          = 15;   // asumsi kecepatan rata-rata (km/jam)
     private const PATH_CORRECTION_FACTOR     = 1.35; // koreksi jalur tidak lurus
     private const MIN_STATIC_BUFFER_MIN      = 10;   // buffer default jika koordinat tidak tersedia
     private const MAX_FEASIBLE_DISTANCE_KM   = null; // contoh: 25.0; null = tanpa batas jarak keras
 
-    /**
-     * Wrapper: cek ketersediaan dari primitif.
-     * Mengunci slot jika pivot.status ∈ {tertunda, dikonfirmasi}.
-     */
     public function isAvailable(int $performerId, string $date, string $startTime, string $endTime): bool
     {
         $booking = (object)[
@@ -45,12 +40,10 @@ class ScheduleValidator
     {
         $excludeId = isset($booking->id) ? $booking->id : null;
 
-        // 0) Batas maksimal tugas per hari
         if (!$this->underDailyCap($performer->id, $booking->date)) {
             return false;
         }
 
-        // 1) Cek bentrok jadwal (overlap) dengan filter status pivot yang mengunci
         $conflict = Booking::whereHas('performers', function ($q) use ($performer) {
                 $q->whereKey($performer->id)
                   ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
@@ -58,7 +51,6 @@ class ScheduleValidator
             ->when($excludeId, fn($q) => $q->where('id', '!=', $excludeId))
             ->whereDate('date', $booking->date)
             ->where(function ($q) use ($booking) {
-                // overlap ketat: start < newEnd AND end > newStart
                 $q->where('start_time', '<', $booking->end_time)
                   ->where('end_time',   '>', $booking->start_time);
             })
@@ -68,7 +60,6 @@ class ScheduleValidator
             return false;
         }
 
-        // 2) Cek jeda perjalanan + buffer dinamis (dua arah)
         $bookingsToday = Booking::whereHas('performers', function ($q) use ($performer) {
                 $q->whereKey($performer->id)
                   ->whereIn('booking_performers.confirmation_status', ['tertunda','dikonfirmasi']);
@@ -84,7 +75,6 @@ class ScheduleValidator
             $hasCoords = $this->hasCoords($latNew, $lonNew) && $this->hasCoords($b->latitude, $b->longitude);
             $distance  = $hasCoords ? $this->calculateDistanceKm($latNew, $lonNew, $b->latitude, $b->longitude) : 0.0;
 
-            // (Opsional) batas jarak keras
             if ($hasCoords && is_numeric(self::MAX_FEASIBLE_DISTANCE_KM)) {
                 if ($distance > (float) self::MAX_FEASIBLE_DISTANCE_KM) {
                     return false;
@@ -104,7 +94,6 @@ class ScheduleValidator
             $bStart   = strtotime($b->start_time);
             $bEnd     = strtotime($b->end_time);
 
-            // i) b berakhir sebelum new mulai → butuh jeda sebelum new.start
             if ($bEnd <= $newStart) {
                 $gap = (int) round(($newStart - $bEnd) / 60);
                 if ($gap < ($travelTime + $buffer)) {
@@ -112,22 +101,17 @@ class ScheduleValidator
                 }
             }
 
-            // ii) b mulai setelah new berakhir → butuh jeda setelah new.end
             if ($newEnd <= $bStart) {
                 $gap = (int) round(($bStart - $newEnd) / 60);
                 if ($gap < ($travelTime + $buffer)) {
                     return false;
                 }
             }
-            // jika bukan i/ii berarti overlap, sudah ditolak pada langkah 1
         }
 
         return true;
     }
 
-    /**
-     * Versi detail (untuk API/UX) – alasan kenapa tidak tersedia.
-     */
     public function getAvailabilityDetail($performer, $booking, $requirement = null): array
     {
         $excludeId = isset($booking->id) ? $booking->id : null;
@@ -222,8 +206,6 @@ class ScheduleValidator
         ];
     }
 
-    /** ======================= util jarak & waktu ======================= */
-
     private function hasCoords($lat, $lon): bool
     {
         return !is_null($lat) && !is_null($lon);
@@ -249,12 +231,10 @@ class ScheduleValidator
 
     private function dynamicBufferMinutes(float $distanceKm): int
     {
-        if ($distanceKm <= 1.0) return 10;  // dekat
-        if ($distanceKm <= 5.0) return 20;  // sedang
-        return 30;                           // jauh
+        if ($distanceKm <= 1.0) return 10;
+        if ($distanceKm <= 5.0) return 20;
+        return 30;                          
     }
-
-    /** ======================= util kebijakan harian ======================= */
 
     private function underDailyCap(int $performerId, string $date): bool
     {
@@ -267,8 +247,6 @@ class ScheduleValidator
 
         return $count < self::MAX_TASKS_PER_DAY;
     }
-
-    /** ======================= validasi waktu ======================= */
 
     public function ensureValidWindow(string $date, string $start, string $end): void
     {
@@ -283,7 +261,6 @@ class ScheduleValidator
         }
     }
 
-    // Debug helper (opsional)
     public function debugDistanceAndTime($lat1, $lon1, $lat2, $lon2, $speed = self::DEFAULT_SPEED_KMH): array
     {
         $distance = $this->calculateDistanceKm($lat1, $lon1, $lat2, $lon2);

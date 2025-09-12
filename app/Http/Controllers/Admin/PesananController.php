@@ -13,7 +13,10 @@ class PesananController extends Controller
 {
     public function index()
     {
-        $bookings = Booking::oldest()->paginate(10);
+        $bookings = Booking::orderBy('date', 'asc')
+                        ->orderBy('start_time', 'asc')
+                        ->paginate(10);
+
         return view('admin.pesanan.index', compact('bookings'));
     }
 

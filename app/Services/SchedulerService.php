@@ -11,9 +11,6 @@ class SchedulerService
 {
     public function __construct(private \App\Services\ScheduleValidator $validator) {}
 
-    /**
-     * Cek ketersediaan & (opsional) assign ke booking yang sudah ada.
-     */
     public function checkAvailabilityAndMaybeAssignToExisting(
         int $bookingId,
         int $eventId,
@@ -29,7 +26,6 @@ class SchedulerService
 
         $this->validator->ensureValidWindow($date, $startTime, $endTime);
 
-        // Draft nilai terbaru (tanpa save)
         $booking->event_id   = $eventId;
         $booking->date       = $date;
         $booking->start_time = $startTime;
@@ -39,7 +35,6 @@ class SchedulerService
         if ($latitude !== null)  { $booking->latitude  = $latitude;  }
         if ($longitude !== null) { $booking->longitude = $longitude; }
 
-        // Ambil requirement per role
         $requirements = PerformerRequirement::where('event_id', $eventId)->get();
         if ($requirements->isEmpty()) {
             return ['available' => false, 'reason' => 'Tidak ada requirement performer untuk event ini.'];
@@ -51,7 +46,6 @@ class SchedulerService
         foreach ($requirements as $req) {
             $need = max(1, (int)$req->quantity);
 
-            // Kandidat per role (internal dulu, lalu eksternal) + pemerataan beban harian
             $internal = Performer::query()
                 ->schedulable()->internal()
                 ->where('performer_role_id', $req->performer_role_id)
@@ -115,21 +109,17 @@ class SchedulerService
             ];
         }
 
-        // Simpan penugasan
         DB::transaction(function () use ($booking, $chosen) {
             $payload = [];
             foreach ($chosen as $p) {
                 $payload[$p->id] = [
                     'is_external'         => $p->is_external ? 1 : 0,
-                    // eksternal masih "tertunda" sampai dikonfirmasi,
-                    // namun tidak menghalangi status booking menjadi "diterima" jika semua peran terpenuhi
                     'confirmation_status' => $p->is_external ? 'tertunda' : 'dikonfirmasi',
-                    'agreed_rate'         => null, // opsional: honor yang disepakati
+                    'agreed_rate'         => null,
                 ];
             }
             $booking->performers()->syncWithoutDetaching($payload);
 
-            // ✔️ Revisi aturan: peran lengkap => booking DITERIMA (meski ada eksternal)
             $booking->status = 'diterima';
             $booking->save();
         });
@@ -143,9 +133,6 @@ class SchedulerService
         ];
     }
 
-    /**
-     * Cek ketersediaan & (opsional) buat booking baru sekaligus assign.
-     */
     public function checkAvailabilityAndMaybeAssign(
         int $eventId,
         string $date,
@@ -249,7 +236,6 @@ class SchedulerService
 
             $bookingSaved->performers()->syncWithoutDetaching($payload);
 
-            // ✔️ Revisi aturan: peran lengkap => booking DITERIMA (meski ada eksternal)
             $bookingSaved->status = 'diterima';
             $bookingSaved->save();
         });
@@ -263,10 +249,6 @@ class SchedulerService
         ];
     }
 
-    /**
-     * Greedy: internal dulu, lanjut eksternal.
-     * NOTE: isPerformerAvailable() mencakup: daily cap, overlap, travel+buffer, (opsional) jarak keras.
-     */
     private function pickGreedyWithExternalModels(
         array $internalCandidates,
         array $externalCandidates,
@@ -295,9 +277,6 @@ class SchedulerService
         return $picked;
     }
 
-    /**
-     * API validasi schedule (detail alasan).
-     */
     public function validateSchedule(
         string $date,
         string $startTime,
@@ -324,10 +303,6 @@ class SchedulerService
         return $this->validator->getAvailabilityDetail($performer, $booking);
     }
 
-    /**
-     * Batch assign (Optimasi/Greedy Dashboard).
-     * Urutan: is_family DESC, priority (darurat > normal), date, start_time.
-     */
     public function assignPerformers()
     {
         $results = [];
@@ -397,7 +372,6 @@ class SchedulerService
                     }
                     $booking->performers()->syncWithoutDetaching($payload);
 
-                    // ✔️ Revisi aturan di mode batch: peran lengkap ⇒ DITERIMA
                     $booking->status = 'diterima';
                 } else {
                     $booking->status = 'ditolak';

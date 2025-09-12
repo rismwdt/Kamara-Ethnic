@@ -234,7 +234,7 @@
                 if (res.data.available) {
                     const name = res.data.performer_name ?? '(tanpa nama)';
                     if (statusEl) {
-                        statusEl.textContent = `✅ Performer tersedia${res.data.assigned ? ' dan sudah di-assign' : ''}: ${name}`;
+                        statusEl.textContent = `✅ Pengisi Acara tersedia${res.data.assigned ? ' dan sudah di-assign' : ''}: ${name}`;
                         statusEl.classList.add('text-green-600');
                     }
 
