@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('account_number')->nullable();
             $table->string('bank_name')->nullable();
-            $table->enum('status', ['aktif', 'nonaktif'])->default('aktif');
             $table->boolean('is_external')->default(false);
             $table->text('notes')->nullable();
             $table->timestamps();

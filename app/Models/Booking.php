@@ -23,8 +23,6 @@ class Booking extends Model
         'start_time',
         'end_time',
         'location_detail',
-        'latitude',
-        'longitude',
         'client_name',
         'event_name',
         'male_parents',
@@ -36,8 +34,6 @@ class Booking extends Model
         'image',
         'description',
         'notes',
-        'priority',
-        'is_family',
         'status',
     ];
 
@@ -50,7 +46,6 @@ class Booking extends Model
         'is_family' => 'boolean',
     ];
 
-    // RELATIONS
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -63,12 +58,10 @@ class Booking extends Model
 
     public function performers(): BelongsToMany
     {
-        return $this->belongsToMany(Performer::class, 'booking_performers')
-            ->withPivot(['is_external', 'confirmation_status', 'agreed_rate'])
+        return $this->belongsToMany(Performer::class, 'booking_performers', 'booking_id', 'performer_id')
             ->withTimestamps();
     }
 
-    // SCOPES
     public function scopeStatus($q, string $status)
     {
         return $q->where('status', $status);
@@ -102,7 +95,6 @@ class Booking extends Model
         return $q->where('event_id', $eventId);
     }
 
-    // HELPERS
     public function startAt(): ?Carbon
     {
         if (!$this->date || !$this->start_time) {

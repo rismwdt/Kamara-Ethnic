@@ -15,8 +15,6 @@ class PerformerRoleController extends Controller
         return view('admin.peran.index', compact('roles'));
     }
 
-    // Tidak perlu create() & edit() karena form-nya inline di index.
-
     public function store(Request $request)
     {
         $data = $request->validate([

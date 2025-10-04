@@ -14,17 +14,26 @@
             </a>
         </div>
 
-        {{-- Info ringkas --}}
         <div class="bg-white shadow rounded-lg p-6 text-gray-800 mb-6">
             <h3 class="text-lg font-semibold mb-4">Informasi Pesanan</h3>
             <table class="table-auto w-full text-sm text-left text-gray-700">
                 <tbody class="divide-y divide-gray-200">
-                    <tr><th class="py-2 pr-4 font-medium w-1/3">Paket Acara</th><td>: {{ $booking->event->name }}</td></tr>
-                    <tr><th class="py-2 pr-4 font-medium">Nama Klien</th><td>: {{ $booking->client_name }}</td></tr>
-                    <tr><th class="py-2 pr-4 font-medium">Tanggal</th><td>: {{ \Carbon\Carbon::parse($booking->date)->format('d-m-Y') }}</td></tr>
+                    <tr>
+                        <th class="py-2 pr-4 font-medium w-1/3">Paket Acara</th>
+                        <td>: {{ $booking->event->name }}</td>
+                    </tr>
+                    <tr>
+                        <th class="py-2 pr-4 font-medium">Nama Klien</th>
+                        <td>: {{ $booking->client_name }}</td>
+                    </tr>
+                    <tr>
+                        <th class="py-2 pr-4 font-medium">Tanggal</th>
+                        <td>: {{ \Carbon\Carbon::parse($booking->date)->format('d-m-Y') }}</td>
+                    </tr>
                     <tr>
                         <th class="py-2 pr-4 font-medium">Waktu</th>
-                        <td>: {{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }} - {{ \Carbon\Carbon::parse($booking->end_time)->format('H:i') }}</td>
+                        <td>: {{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }} -
+                            {{ \Carbon\Carbon::parse($booking->end_time)->format('H:i') }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -35,14 +44,14 @@
             @method('PUT')
 
             @if ($errors->any())
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-                    <strong>Terjadi kesalahan:</strong>
-                    <ul class="mt-2 list-disc list-inside">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+                <strong>Terjadi kesalahan:</strong>
+                <ul class="mt-2 list-disc list-inside">
+                    @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
             @endif
 
             <div class="bg-white shadow rounded-lg p-6 text-gray-800">
@@ -52,21 +61,21 @@
                     <div>
                         <x-input-label for="priority" value="Prioritas" />
                         @php $pOld = old('priority', $booking->priority ?? 'normal'); @endphp
-                        <select id="priority" name="priority" class="mt-1 block w-full rounded border-gray-300 shadow-sm">
+                        <select id="priority" name="priority"
+                            class="mt-1 block w-full rounded border-gray-300 shadow-sm">
                             <option value="">-- Biarkan tanpa perubahan --</option>
-                            <option value="normal"  {{ $pOld==='normal'  ? 'selected':'' }}>Normal</option>
+                            <option value="normal" {{ $pOld==='normal'  ? 'selected':'' }}>Normal</option>
                             <option value="darurat" {{ $pOld==='darurat' ? 'selected':'' }}>Darurat</option>
                         </select>
                         <x-input-error :messages="$errors->get('priority')" class="mt-2" />
                     </div>
 
-                    {{-- Keluarga / Relasi --}}
                     <div class="flex items-end">
                         <div>
                             <input type="hidden" name="is_family" value="0">
                             <label class="inline-flex items-center gap-2">
                                 <input type="checkbox" name="is_family" value="1"
-                                       {{ old('is_family', $booking->is_family ? 1 : 0) ? 'checked' : '' }}>
+                                    {{ old('is_family', $booking->is_family ? 1 : 0) ? 'checked' : '' }}>
                                 Dari keluarga / relasi
                             </label>
                             <x-input-error :messages="$errors->get('is_family')" class="mt-2" />

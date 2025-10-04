@@ -29,50 +29,48 @@
                 </x-slot>
 
                 @php
-                    $no = ($grouped->currentPage()-1) * $grouped->perPage() + 1;
+                $no = ($grouped->currentPage()-1) * $grouped->perPage() + 1;
                 @endphp
 
                 @foreach ($grouped as $group)
-                    @php
-                        $event = $group->first()->event;
-                        // gabungkan catatan yang terisi (jika ada)
-                        $notes = $group->pluck('notes')->filter()->unique()->values()->all();
-                    @endphp
-                    <tr>
-                        <td class="px-4 py-2">{{ $no++ }}</td>
-                        <td class="px-4 py-2">{{ $event->name ?? '-' }}</td>
-                        <td class="px-4 py-2">
-                            <ul class="list-disc list-inside">
-                                @foreach ($group as $req)
-                                    <li>{{ $req->performerRole->name ?? '-' }} ({{ $req->quantity }} orang)</li>
-                                @endforeach
-                            </ul>
-                        </td>
-                        <td class="px-4 py-2">
-                            {{ count($notes) ? implode('; ', $notes) : '—' }}
-                        </td>
-                        <td class="px-4 py-2">
-                            <div class="flex space-x-2">
-                                <a href="{{ route('kebutuhan-paket-acara.edit', $event->id) }}">
-    <x-primary-button class="text-xs px-2 py-1">
-        <i class="fas fa-edit"></i>
-    </x-primary-button>
-</a>
+                @php
+                $event = $group->first()->event;
+                // gabungkan catatan yang terisi (jika ada)
+                $notes = $group->pluck('notes')->filter()->unique()->values()->all();
+                @endphp
+                <tr>
+                    <td class="px-4 py-2">{{ $no++ }}</td>
+                    <td class="px-4 py-2">{{ $event->name ?? '-' }}</td>
+                    <td class="px-4 py-2">
+                        <ul class="list-disc list-inside">
+                            @foreach ($group as $req)
+                            <li>{{ $req->performerRole->name ?? '-' }} ({{ $req->quantity }} orang)</li>
+                            @endforeach
+                        </ul>
+                    </td>
+                    <td class="px-4 py-2">
+                        {{ count($notes) ? implode('; ', $notes) : '—' }}
+                    </td>
+                    <td class="px-4 py-2">
+                        <div class="flex space-x-2">
+                            <a href="{{ route('kebutuhan-paket-acara.edit', $event->id) }}">
+                                <x-primary-button class="text-xs px-2 py-1">
+                                    <i class="fas fa-edit"></i>
+                                </x-primary-button>
+                            </a>
 
-<x-danger-button type="button"
-    onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'delete-event-{{ $event->id }}' }))">
-    <i class="fas fa-trash"></i>
-</x-danger-button>
+                            <x-danger-button type="button"
+                                onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'delete-event-{{ $event->id }}' }))">
+                                <i class="fas fa-trash"></i>
+                            </x-danger-button>
 
-<x-modal-delete name="delete-event-{{ $event->id }}" :itemId="$event->id"
-    :itemName="$event->name ?? 'Data'" route="kebutuhan-paket-acara.destroy-event" />
-
-                            </div>
-                        </td>
-                    </tr>
+                            <x-modal-delete name="delete-event-{{ $event->id }}" :itemId="$event->id"
+                                :itemName="$event->name ?? 'Data'" route="kebutuhan-paket-acara.destroy-event" />
+                        </div>
+                    </td>
+                </tr>
                 @endforeach
             </x-table>
-
             <div class="mt-8 flex justify-center">
                 {{ $grouped->links() }}
             </div>

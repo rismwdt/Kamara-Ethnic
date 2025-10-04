@@ -14,14 +14,11 @@ class ScheduleController extends Controller
     public function checkSchedule(Request $request)
     {
         try {
-            // Controller cukup passing seluruh input ke service
             $result = $this->optimizer->checkClientAvailability($request->all());
 
-            // Selalu 200; kalau mau 422 saat invalid, tinggal ubah baris di bawah:
             return response()->json($result, 200);
 
         } catch (ValidationException $e) {
-            // Kalau service melempar ValidationException
             return response()->json(['errors' => $e->errors()], 422);
         } catch (\Throwable $e) {
             return response()->json([

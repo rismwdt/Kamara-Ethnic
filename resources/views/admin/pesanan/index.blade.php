@@ -1,3 +1,5 @@
+@php use Illuminate\Support\Str; @endphp
+
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
@@ -8,31 +10,26 @@
 
     <main class="flex-1 mb-auto bg-white min-h-screen p-6 text-gray-900 flex flex-col">
         @if (session('success'))
-            <div class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded">
-                {{ session('success') }}
-            </div>
+        <div class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded">
+            {{ session('success') }}
+        </div>
         @endif
 
         <div class="flex justify-between items-center mb-4">
-            <div class="flex justify-between w-full px-4">
-                <x-primary-button x-data x-on:click="$dispatch('open-modal', 'modal-unduh-laporan')">
-                    <i class="fas fa-download mr-1"></i> Unduh Laporan
-                </x-primary-button>
+            <div class="flex justify-between w-full">
+                <x-add-button href="{{ route('pesanan.create') }}" label="Tambah Pesanan" />
 
-                <!-- Tombol cek rekomendasi massal: HANYA CEK, TANPA ASSIGN -->
-                <x-primary-button class="bg-green-600 hover:bg-green-700" onclick="cekSemuaPerformer()">
-                    <i class="fas fa-magic mr-1"></i> Cek Rekomendasi Pengisi Acara
+                <x-primary-button x-data x-on:click="$dispatch('open-modal', 'modal-unduh-laporan')">
+                    <i class="fas fa-download mr-1"></i>Laporan
                 </x-primary-button>
             </div>
 
-            {{-- Modal Unduh Laporan --}}
             <x-modal name="modal-unduh-laporan" focusable>
                 <div class="relative p-6">
                     <button type="button" class="absolute top-4 right-4 text-gray-500 hover:text-red-600"
-                            x-on:click="$dispatch('close')" aria-label="Tutup">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2"
-                             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        x-on:click="$dispatch('close')" aria-label="Tutup">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                     <form method="GET" action="{{ route('admin.pesanan.cetak') }}" target="_blank">
@@ -41,12 +38,12 @@
                         <div class="mt-4">
                             <label for="start_date" class="block text-sm font-medium text-gray-700">Tanggal Awal</label>
                             <input type="date" name="start_date" id="start_date" required
-                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         </div>
                         <div class="mt-4">
                             <label for="end_date" class="block text-sm font-medium text-gray-700">Tanggal Akhir</label>
                             <input type="date" name="end_date" id="end_date" required
-                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         </div>
                         <div class="mt-6 flex justify-end">
                             <x-secondary-button x-on:click.prevent="$dispatch('close')">Batal</x-secondary-button>
@@ -63,121 +60,113 @@
                     <th class="px-4 py-2">No.</th>
                     <th class="px-4 py-2">Nama Klien</th>
                     <th class="px-4 py-2">Paket</th>
-                    <th class="px-4 py-2">Tanggal</th>
-                    <th class="px-4 py-2">Waktu</th>
+                    <th class="px-4 py-2">Tanggal & Waktu</th>
                     <th class="px-4 py-2">Alamat Lengkap</th>
                     <th class="px-4 py-2">Pengisi Acara</th>
-                    <th class="px-4 py-2">Prioritas</th>
                     <th class="px-4 py-2">Status</th>
                     <th class="px-4 py-2">Aksi</th>
                 </tr>
             </x-slot>
 
             @foreach ($bookings as $index => $booking)
-                @php
-                    $priority = $booking->priority ?? 'normal';
-                    $priorityLabel = $priority === 'darurat' ? 'Darurat' : 'Normal';
-                    $priorityClass = $priority === 'darurat'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-gray-100 text-gray-800';
-                    $statusColor = match($booking->status) {
-                        'tertunda' => 'bg-yellow-100 text-yellow-800',
-                        'diterima' => 'bg-green-100 text-green-800',
-                        'ditolak'  => 'bg-red-100 text-red-800',
-                        'selesai'  => 'bg-indigo-100 text-indigo-800',
-                        default    => 'bg-gray-100 text-gray-800',
-                    };
-                @endphp
+            @php
+            $priority = $booking->priority ?? 'normal';
+            $priorityLabel = $priority === 'darurat' ? 'Darurat' : 'Normal';
+            $priorityClass = $priority === 'darurat'
+            ? 'bg-red-100 text-red-800'
+            : 'bg-gray-100 text-gray-800';
+            $statusColor = match($booking->status) {
+            'tertunda' => 'bg-yellow-100 text-yellow-800',
+            'diterima' => 'bg-green-100 text-green-800',
+            'ditolak' => 'bg-red-100 text-red-800',
+            'selesai' => 'bg-indigo-100 text-indigo-800',
+            default => 'bg-gray-100 text-gray-800',
+            };
+            @endphp
 
-                <tr id="booking-row-{{ $booking->id }}"
-                    data-booking="{{ $booking->id }}"
-                    data-event="{{ $booking->event_id }}"
-                    data-date="{{ optional($booking->date)->format('Y-m-d') }}"
-                    data-start="{{ $booking->start_time ? \Illuminate\Support\Str::of($booking->start_time)->substr(0,5) : '' }}"
-                    data-end="{{ $booking->end_time ? \Illuminate\Support\Str::of($booking->end_time)->substr(0,5) : '' }}"
-                    data-location="{{ $booking->location_detail }}"
-                    data-lat="{{ $booking->latitude }}"
-                    data-lng="{{ $booking->longitude }}"
-                >
-                    <td class="px-4 py-2">{{ $bookings->firstItem() + $index }}</td>
-                    <td class="px-4 py-2">
-                        <div class="flex items-center gap-2">
-                            <span>{{ $booking->client_name }}</span>
-                            @if($booking->is_family)
-                                <span class="px-2 py-0.5 rounded text-[10px] bg-blue-100 text-blue-800">Keluarga</span>
-                            @endif
-                        </div>
-                    </td>
-                    <td class="px-4 py-2">{{ $booking->event->name }}</td>
-                    <td class="px-4 py-2">{{ \Carbon\Carbon::parse($booking->date)->format('d-m-Y') }}</td>
-                    <td class="px-4 py-2">
+            <tr id="booking-row-{{ $booking->id }}">
+                <td class="px-4 py-2">{{ $bookings->firstItem() + $index }}</td>
+
+                <td class="px-4 py-2">
+                    <div class="flex items-center gap-2">
+                        <span>{{ $booking->client_name }}</span>
+                        @if($booking->is_family)
+                        <span class="px-2 py-0.5 rounded text-[10px] bg-blue-100 text-blue-800">Keluarga</span>
+                        @endif
+                    </div>
+                </td>
+
+                <td class="px-4 py-2">{{ $booking->event->name }}</td>
+
+                <td class="px-4 py-2 text-sm">
+                    <div>{{ \Carbon\Carbon::parse($booking->date)->format('d-m-Y') }}</div>
+                    <div class="text-gray-600 mt-1">
                         {{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }} -
                         {{ \Carbon\Carbon::parse($booking->end_time)->format('H:i') }}
-                    </td>
-                    <td class="px-4 py-2">{{ $booking->location_detail }}</td>
+                    </div>
+                </td>
 
-                    <td class="px-4 py-2 max-w-md">
-                        @if ($booking->performers->count())
-                            <ul class="list-disc list-inside space-y-1 max-h-24 overflow-y-auto pr-1 text-sm">
-                                @foreach ($booking->performers as $performer)
-                                    <li class="break-words">
-                                        {{ $performer->name }}
-                                        @if($performer->pivot?->is_external)
-                                            <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-800">Eksternal</span>
-                                        @endif
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @else
-                            <!-- Tombol baris: CEK & TETAPKAN (assign=true) -->
-                            <x-primary-button
-                                class="text-xs px-2 py-1"
-                                :id="'btn-cek-'.$booking->id"
-                                onclick="cekPerformer({{ $booking->id }}, true)">
-                                <span class="inline-flex items-center">
-                                    <i class="fas fa-magic mr-1"></i>
-                                    <span>Cek & Tetapkan</span>
-                                    <span class="ml-2 hidden" id="spinner-{{ $booking->id }}">⏳</span>
-                                </span>
+                <td class="px-4 py-2 max-w-xs">
+                    <div class="max-h-16 overflow-y-auto pr-1 text-sm break-words">
+                        {{ $booking->location_detail }}
+                    </div>
+                </td>
+
+                <td class="px-4 py-2 max-w-md">
+                    @if ($booking->performers->count())
+                    <ul class="list-disc list-outside pl-5 max-h-24 overflow-y-auto text-sm">
+                        @foreach ($booking->performers as $performer)
+                        <li class="break-words">
+                            {{ $performer->name }}
+                            @if($performer->pivot?->is_external)
+                            <span
+                                class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-800">Eksternal</span>
+                            @endif
+                        </li>
+                        @endforeach
+                    </ul>
+
+                    @else
+                    <x-primary-button class="text-xs px-2 py-1 bg-amber-600 hover:bg-amber-700"
+                        :id="'btn-manual-'.$booking->id" x-data
+                        x-on:click="$dispatch('open-modal', 'modal-manual-{{ $booking->id }}')">
+                        <span class="inline-flex items-center">
+                            <i class="fas fa-user-check mr-1"></i>
+                            <span>Tambah</span>
+                        </span>
+                    </x-primary-button>
+                    @endif
+                </td>
+
+                <td class="px-4 py-2">
+                    <span id="status-badge-{{ $booking->id }}"
+                        class="px-2 py-1 text-xs font-semibold rounded {{ $statusColor }}">
+                        {{ ucfirst($booking->status) }}
+                    </span>
+                </td>
+
+                <td class="px-4 py-2">
+                    <div class="flex justify-center items-center space-x-2">
+                        <a href="{{ route('admin.pesanan.show', $booking->id) }}">
+                            <x-primary-button class="bg-indigo-600 hover:bg-indigo-700" title="Lihat">
+                                <i class="fas fa-eye"></i>
                             </x-primary-button>
-                            <span id="status-{{ $booking->id }}" class="ml-2 text-sm" aria-live="polite"></span>
-                        @endif
-                    </td>
-
-                    <td class="px-4 py-2">
-                        <span class="px-2 py-1 text-xs font-semibold rounded {{ $priorityClass }}">
-                            {{ $priorityLabel }}
-                        </span>
-                    </td>
-
-                    <td class="px-4 py-2">
-                        <span class="px-2 py-1 text-xs font-semibold rounded {{ $statusColor }}">
-                            {{ ucfirst($booking->status) }}
-                        </span>
-                    </td>
-
-                    <td class="px-4 py-2">
-                        <div class="flex justify-center items-center space-x-2">
-                            <a href="{{ route('admin.pesanan.show', $booking->id) }}">
-                                <x-primary-button class="bg-indigo-600 hover:bg-indigo-700" title="Lihat">
-                                    <i class="fas fa-eye ml-1"></i>
-                                </x-primary-button>
-                            </a>
-                            <a href="{{ route('pesanan.edit', $booking->id) }}">
-                                <x-primary-button class="text-xs px-2 py-1" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </x-primary-button>
-                            </a>
-                            <x-danger-button type="button"
-                                onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'delete-{{ $booking->id }}' }))"
-                                title="Hapus">
-                                <i class="fas fa-trash"></i>
-                            </x-danger-button>
-                            <x-modal-delete name="delete-{{ $booking->id }}" :itemId="$booking->id"
-                                :itemName="$booking->booking_code" route="pesanan.destroy" />
-                        </div>
-                    </td>
-                </tr>
+                        </a>
+                        {{-- <a href="{{ route('pesanan.edit', $booking->id) }}">
+                        <x-primary-button class="text-xs px-2 py-1" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </x-primary-button>
+                        </a> --}}
+                        <x-danger-button type="button"
+                            onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'delete-{{ $booking->id }}' }))"
+                            title="Hapus">
+                            <i class="fas fa-trash"></i>
+                        </x-danger-button>
+                        <x-modal-delete name="delete-{{ $booking->id }}" :itemId="$booking->id"
+                            :itemName="$booking->booking_code" route="pesanan.destroy" />
+                    </div>
+                </td>
+            </tr>
             @endforeach
         </x-table>
 
@@ -188,7 +177,7 @@
 
     <script>
         window.ENDPOINTS = {
-            cekJadwal: @json(route('pesanan.cek-jadwal'))
+            simpanPerformer: @json(route('pesanan.tambah-pengisi-acara.store')),
         };
     </script>
 
@@ -197,115 +186,85 @@
         axios.defaults.headers.common['X-CSRF-TOKEN'] =
             document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-        function setLoading(bookingId, on) {
-            const btn = document.getElementById(`btn-cek-${bookingId}`);
-            const spn = document.getElementById(`spinner-${bookingId}`);
-            if (btn) btn.disabled = !!on;
-            if (spn) spn.classList.toggle('hidden', !on);
+        function toggleRole(bookingId, roleSlug, checked) {
+            const scope = document.getElementById(`role-${roleSlug}-${bookingId}`);
+            if (!scope) return;
+            scope.querySelectorAll('.kandidat-check').forEach(cb => cb.checked = !!checked);
         }
 
-        async function cekPerformer(bookingId, assign = false) {
-            const statusEl = document.querySelector(`#status-${bookingId}`);
+        async function simpanPenetapanManual(bookingId) {
             const row = document.querySelector(`#booking-row-${bookingId}`);
+            const checks = document.querySelectorAll(`#kandidat-wrap-${bookingId} .kandidat-check:checked`);
+            const note = document.getElementById(`manual-note-${bookingId}`) ? .value || '';
+            const statusEl = document.getElementById(`status-${bookingId}`);
 
-            setLoading(bookingId, true);
-            if (statusEl) {
-                statusEl.textContent = '⏳ Mengecek performer...';
-                statusEl.classList.remove('text-red-600','text-green-600');
-            }
-
-            const latRaw = row.dataset.lat;
-            const lngRaw = row.dataset.lng;
-
-            const payload = {
-                booking_id: row.dataset.booking,
-                event_id:   row.dataset.event,
-                date:       row.dataset.date,
-                start_time: row.dataset.start,
-                end_time:   row.dataset.end,
-                location:   row.dataset.location || null,
-                latitude:   latRaw ? parseFloat(latRaw) : null,
-                longitude:  lngRaw ? parseFloat(lngRaw) : null,
-                assign:     !!assign // true hanya dari tombol "Cek & Tetapkan"
-            };
-
-            try {
-                const res = await axios.post(window.ENDPOINTS.cekJadwal, payload);
-                if (res.data.available) {
-                    const name = res.data.performer_name ?? '(tanpa nama)';
-                    if (statusEl) {
-                        statusEl.textContent = `✅ Pengisi Acara tersedia${res.data.assigned ? ' dan sudah di-assign' : ''}: ${name}`;
-                        statusEl.classList.add('text-green-600');
-                    }
-
-                    if (res.data.assigned) {
-                        // update badge status
-                        const statusCell = row.querySelector('td:nth-child(9) span');
-                        const s = (res.data.booking_status || '').toLowerCase();
-                        if (statusCell && s) {
-                            statusCell.textContent = s.charAt(0).toUpperCase() + s.slice(1);
-                            const map = {
-                                tertunda: 'px-2 py-1 text-xs font-semibold rounded bg-yellow-100 text-yellow-800',
-                                diterima: 'px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800',
-                                ditolak:  'px-2 py-1 text-xs font-semibold rounded bg-red-100 text-red-800',
-                                selesai:  'px-2 py-1 text-xs font-semibold rounded bg-indigo-100 text-indigo-800'
-                            };
-                            statusCell.className = map[s] || 'px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-800';
-                        }
-
-                        // tampilkan performer
-                        const performerCell = row.querySelector('td:nth-child(7)');
-                        if (performerCell) {
-                            const names = (res.data.performer_name || '').split(',').map(s => s.trim()).filter(Boolean);
-                            if (names.length) {
-                                performerCell.innerHTML =
-                                    '<ul class="list-disc list-inside space-y-1 max-h-24 overflow-y-auto pr-1 text-sm">'
-                                    + names.map(n => `<li class="break-words">${n}</li>`).join('')
-                                    + '</ul>';
-                            }
-                        }
-                    }
-                } else {
-                    if (statusEl) {
-                        let msg = "❌ Performer tidak tersedia: " + (res.data.reason ?? 'Tidak diketahui');
-                        if (res.data.gaps) {
-                            const list = Object.entries(res.data.gaps)
-                              .map(([roleId, g]) => `Role ${roleId}: butuh ${g.need}, tersedia ${g.available}`)
-                              .join(' | ');
-                            msg += " — Gap: " + list;
-                        }
-                        statusEl.textContent = msg;
-                        statusEl.classList.add('text-red-600');
-                    }
-                }
-            } catch (err) {
-                console.error(err);
+            if (!checks.length) {
                 if (statusEl) {
-                    if (err.response?.status === 422) {
-                        const msg = Object.values(err.response.data.errors ?? {}).flat().join('; ');
-                        statusEl.textContent = "⚠ Validasi gagal: " + (msg || 'Data tidak valid');
-                    } else if (err.response?.status === 419) {
-                        statusEl.textContent = "⚠ Sesi kedaluwarsa (CSRF). Muat ulang halaman.";
-                    } else {
-                        statusEl.textContent = "⚠ Terjadi kesalahan!";
-                    }
+                    statusEl.textContent = '⚠ Pilih minimal satu pengisi acara.';
                     statusEl.classList.add('text-red-600');
                 }
-            } finally {
-                setLoading(bookingId, false);
+                return;
             }
-        }
 
-        // 🔁 PERUBAHAN PENTING: mass check = CEK SAJA (assign=false)
-        function cekSemuaPerformer() {
-            const rows = document.querySelectorAll('tr[id^="booking-row-"]');
-            rows.forEach(row => {
-                const bookingId = row.id.replace('booking-row-', '');
-                const hasAssigned = !!row.querySelector('td:nth-child(7) ul'); // sudah ada performer?
-                if (!hasAssigned) {
-                    cekPerformer(bookingId, false); // <-- HANYA CEK
+            const performer_ids = Array.from(checks).map(c => Number(c.value));
+
+            try {
+                if (statusEl) {
+                    statusEl.textContent = '⏳ Menyimpan penetapan…';
+                    statusEl.classList.remove('text-red-600', 'text-green-600');
                 }
-            });
+
+                const {
+                    data
+                } = await axios.post(window.ENDPOINTS.simpanPerformer, {
+                    booking_id: row.dataset.booking,
+                    performer_ids,
+                    note
+                });
+
+                if (data ? .success) {
+                    const namesArray = Array.isArray(data.assigned) ?
+                        data.assigned.map(p => p.name) :
+                        (data.names || []);
+
+                    const performerCell = row.querySelector('td:nth-child(7)');
+                    if (performerCell && namesArray.length) {
+                        const listHtml = namesArray.map(n => `<li class="break-words">${n}</li>`).join('');
+                        performerCell.innerHTML =
+                            `<ul class="list-disc list-inside space-y-1 max-h-24 overflow-y-auto pr-1 text-sm">${listHtml}</ul>`;
+                    }
+
+                    const badge = document.getElementById(`status-badge-${bookingId}`);
+                    const s = (data.booking_status || 'diterima').toLowerCase();
+                    const map = {
+                        tertunda: 'px-2 py-1 text-xs font-semibold rounded bg-yellow-100 text-yellow-800',
+                        diterima: 'px-2 py-1 text-xs font-semibold rounded bg-green-100 text-green-800',
+                        ditolak: 'px-2 py-1 text-xs font-semibold rounded bg-red-100 text-red-800',
+                        selesai: 'px-2 py-1 text-xs font-semibold rounded bg-indigo-100 text-indigo-800'
+                    };
+                    if (badge) {
+                        badge.textContent = s.charAt(0).toUpperCase() + s.slice(1);
+                        badge.className = map[s] ||
+                            'px-2 py-1 text-xs font-semibold rounded bg-gray-100 text-gray-800';
+                    }
+
+                    if (statusEl) {
+                        statusEl.textContent = '✅ Penetapan disimpan.';
+                        statusEl.classList.add('text-green-600');
+                    }
+                    window.dispatchEvent(new CustomEvent('close-modal', {
+                        detail: `modal-manual-${bookingId}`
+                    }));
+                } else {
+                    throw new Error('Gagal menyimpan');
+                }
+
+            } catch (e) {
+                if (statusEl) {
+                    statusEl.textContent = '⚠ Gagal menyimpan penetapan.';
+                    statusEl.classList.add('text-red-600');
+                }
+            }
         }
     </script>
 </x-app-layout>

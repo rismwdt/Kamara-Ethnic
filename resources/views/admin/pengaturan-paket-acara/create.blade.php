@@ -17,19 +17,18 @@
         <form method="POST" action="{{ route('pengaturan-pengisi-acara.store') }}">
             @csrf
 
-            {{-- Pilih Acara --}}
             <div class="mb-4">
                 <x-input-label for="event_id" value="Acara" />
-                <select id="event_id" name="event_id" class="mt-1 block w-full rounded border-gray-300 shadow-sm" required>
+                <select id="event_id" name="event_id" class="mt-1 block w-full rounded border-gray-300 shadow-sm"
+                    required>
                     <option value="">Pilih Acara</option>
                     @foreach($events as $event)
-                        <option value="{{ $event->id }}">{{ $event->name }}</option>
+                    <option value="{{ $event->id }}">{{ $event->name }}</option>
                     @endforeach
                 </select>
                 <x-input-error :messages="$errors->get('event_id')" class="mt-2" />
             </div>
 
-            {{-- Table Dynamic Rows --}}
             <table class="w-full border mb-4" id="roles-table">
                 <thead>
                     <tr class="bg-gray-100">
@@ -42,51 +41,49 @@
                 <tbody>
                     <tr>
                         <td class="border p-2">
-                            <select name="performer_role_id[]" class="w-full rounded border-gray-300 shadow-sm" required>
+                            <select name="performer_role_id[]" class="w-full rounded border-gray-300 shadow-sm"
+                                required>
                                 <option value="">Pilih Peran</option>
                                 @foreach($roles as $role)
-                                    <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                <option value="{{ $role->id }}">{{ $role->name }}</option>
                                 @endforeach
                             </select>
                         </td>
                         <td class="border p-2">
-                            <input type="number" name="quantity[]" min="1" value="1" class="w-full rounded border-gray-300 shadow-sm" required>
+                            <input type="number" name="quantity[]" min="1" value="1"
+                                class="w-full rounded border-gray-300 shadow-sm" required>
                         </td>
                         <td class="border p-2">
                             <input type="text" name="notes[]" class="w-full rounded border-gray-300 shadow-sm">
                         </td>
                         <td class="border p-2 text-center">
-    <button type="button"
-        class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md
+                            <button type="button" class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md
                font-semibold text-xs text-white uppercase tracking-widest
                hover:bg-red-500 active:bg-red-700
                focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
                dark:focus:ring-offset-gray-800 transition ease-in-out duration-150 remove-row">Hapus
-    </button>
-</td>
+                            </button>
+                        </td>
 
                     </tr>
                 </tbody>
             </table>
 
-<button type="button" id="add-row"
-    class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md
+            <button type="button" id="add-row" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md
            font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700
            focus:outline-none focus:ring focus:ring-blue-300 active:bg-blue-800 transition mb-4">
-    <i class="fas fa-plus mr-2"></i> Tambah Baris
-</button>
+                <i class="fas fa-plus mr-2"></i> Tambah Baris
+            </button>
 
             <x-primary-button>Simpan Semua</x-primary-button>
         </form>
     </main>
 
-    {{-- Script Tambah / Hapus Baris --}}
     <script>
         document.getElementById('add-row').addEventListener('click', function () {
             let tableBody = document.querySelector('#roles-table tbody');
             let newRow = tableBody.rows[0].cloneNode(true);
 
-            // Reset value pada baris baru
             newRow.querySelectorAll('select, input').forEach(el => {
                 if (el.type === 'checkbox') {
                     el.checked = false;

@@ -7,31 +7,24 @@
 
     <main class="flex-1 mb-auto bg-white dark:bg-gray-900 p-6 text-gray-900 dark:text-gray-100 flex flex-col">
 
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
             <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-                <div class="text-xs text-gray-500 dark:text-gray-400 font-semibold mb-2">Total Pendapatan</div>
-                <div class="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                    Rp {{ number_format($totalPendapatan, 0, ',', '.') }}
+                <div class="text-xs text-gray-500 dark:text-gray-400 font-semibold mb-2">Total Acara Keseluruhan</div>
+                <div class="text-3xl font-extrabold text-gray-900 dark:text-white mb-1">
+                    {{ (int)($totalAcara ?? 0) }} Acara
                 </div>
-                <div class="text-sm text-indigo-600">Pendapatan Bulan Ini:
-                    Rp {{ number_format($pendapatanBulanIni, 0, ',', '.') }}
+
+                <div class="h-px bg-gray-200 dark:bg-gray-700 my-2"></div>
+
+                <div class="text-xs text-gray-500 dark:text-gray-400 font-semibold">Total Acara Minggu Ini</div>
+                <div class="text-sm font-semibold text-gray-900 dark:text-white">
+                    {{ (int)($totalAcaraMingguIni ?? 0) }} Acara
+                    <span class="text-gray-500 dark:text-gray-400 font-normal">
+                        ({{ $weekLabelStart ?? '' }} – {{ $weekLabelEnd ?? '' }})
+                    </span>
                 </div>
             </div>
-
-            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-                <div class="text-xs text-gray-500 dark:text-gray-400 font-semibold mb-2">Total Jadwal Acara</div>
-                <div class="text-2xl font-bold text-gray-900 dark:text-white mb-1">{{ $totalJadwal }} Jadwal</div>
-                <div class="text-sm text-indigo-600">Bulan Ini: {{ $jadwalBulanIni }} Jadwal</div>
-            </div>
-
-            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-                <div class="text-xs text-gray-500 dark:text-gray-400 font-semibold mb-2">Total Klien</div>
-                <div class="text-2xl font-bold text-gray-900 dark:text-white mb-1">{{ $jumlahKlien }} Klien</div>
-                <div class="text-sm text-indigo-600">Bulan Ini: {{ $jumlahKlienBulanIni }} Klien</div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6">
 
             <div x-data="calendarComp({
           initYear: {{ now()->year }},
@@ -81,45 +74,40 @@
                 </div>
             </div>
 
-            <div
-                class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 md:col-span-2 lg:col-span-2">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-semibold text-gray-900 dark:text-white text-md">Jadwal Minggu Ini</h3>
-                    <a href="{{ route('pesanan.index') }}"
-                        class="bg-indigo-600 text-white text-xs font-semibold rounded-md px-3 py-1 hover:bg-indigo-500 transition">
-                        Detail
-                    </a>
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-xs text-left text-gray-600 dark:text-gray-200">
-                        <thead
-                            class="bg-gray-50 dark:bg-gray-800/60 text-gray-700 dark:text-gray-300 text-[11px] uppercase">
-                            <tr>
-                                <th class="px-3 py-2 font-semibold">No</th>
-                                <th class="px-3 py-2 font-semibold">Tanggal</th>
-                                <th class="px-3 py-2 font-semibold">Waktu</th>
-                                <th class="px-3 py-2 font-semibold">Nama Klien</th>
-                                <th class="px-3 py-2 font-semibold">Paket Acara</th>
-                                <th class="px-3 py-2 font-semibold">Alamat</th>
+                    <table class="w-full text-xs text-left text-gray-700 dark:text-gray-200 font-semibold">
+                        <thead>
+                            <tr class="border-b border-gray-300 dark:border-gray-700">
+                                <th class="pb-3 px-2">No</th>
+                                <th class="pb-3 px-3">Tanggal</th>
+                                <th class="pb-3 px-3">Waktu</th>
+                                <th class="pb-3 px-3">Nama Klien</th>
+                                <th class="pb-3 px-3">Paket Acara</th>
+                                <th class="pb-3 px-3">Alamat</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($jadwalMingguIni as $index => $booking)
-                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                                <td class="px-3 py-2">{{ $index + 1 }}</td>
-                                <td class="px-3 py-2">{{ \Carbon\Carbon::parse($booking->date)->format('d-m-Y') }}</td>
-                                <td class="px-3 py-2">
-                                    {{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }} -
+                            <tr class="border-t border-gray-200 dark:border-gray-700">
+                                <td class="py-2 px-3">{{ $index + 1 }}</td>
+                                <td class="py-2 px-3">
+                                    {{ \Carbon\Carbon::parse($booking->date)->translatedFormat('d-m-Y') }}</td>
+                                <td class="py-2 px-3">
+                                    {{ \Carbon\Carbon::parse($booking->start_time)->format('H:i') }} –
                                     {{ \Carbon\Carbon::parse($booking->end_time)->format('H:i') }}
                                 </td>
-                                <td class="px-3 py-2">{{ $booking->client_name }}</td>
-                                <td class="px-3 py-2">{{ optional($booking->event)->name ?? '—' }}</td>
-                                <td class="px-3 py-2">{{ $booking->location_detail }}</td>
+                                <td class="py-2 px-3">{{ $booking->client_name }}</td>
+                                <td class="py-2 px-3">{{ optional($booking->event)->name ?? '—' }}</td>
+                                <td class="py-2 px-3">{{ $booking->location_detail }}</td>
                             </tr>
                             @empty
-                            <tr>
-                                <td colspan="6" class="px-3 py-4 text-center text-gray-500">
+                            <tr class="border-t border-gray-200 dark:border-gray-700">
+                                <td colspan="6" class="py-2 px-3 text-center text-gray-500 dark:text-gray-400">
                                     Tidak ada jadwal minggu ini
                                 </td>
                             </tr>
@@ -128,7 +116,6 @@
                     </table>
                 </div>
             </div>
-
         </div>
     </main>
 
@@ -156,15 +143,15 @@
                 },
 
                 startOfGrid() {
-                    const d = new Date(this.year, this.month, 1); // first day of month
-                    const dow = d.getDay(); // 0..6 (Sun..Sat)
-                    d.setDate(d.getDate() - dow); // back to Sunday
+                    const d = new Date(this.year, this.month, 1);
+                    const dow = d.getDay();
+                    d.setDate(d.getDate() - dow);
                     return d;
                 },
                 endOfGrid() {
-                    const d = new Date(this.year, this.month + 1, 0); // last day of month
-                    const dow = d.getDay(); // 0..6
-                    d.setDate(d.getDate() + (6 - dow)); // forward to Saturday
+                    const d = new Date(this.year, this.month + 1, 0);
+                    const dow = d.getDay();
+                    d.setDate(d.getDate() + (6 - dow));
                     return d;
                 },
                 days() {
@@ -188,10 +175,20 @@
                 },
 
                 prev() {
-                    this.month === 0 ? (this.month = 11, this.year--) : this.month--;
+                    if (this.month === 0) {
+                        this.month = 11;
+                        this.year--;
+                    } else {
+                        this.month--;
+                    }
                 },
                 next() {
-                    this.month === 11 ? (this.month = 0, this.year++) : this.month++;
+                    if (this.month === 11) {
+                        this.month = 0;
+                        this.year++;
+                    } else {
+                        this.month++;
+                    }
                 },
             });
         });

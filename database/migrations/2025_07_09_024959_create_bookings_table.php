@@ -23,8 +23,6 @@ return new class extends Migration
             $table->time('start_time');
             $table->time('end_time');
             $table->text('location_detail');
-            $table->decimal('latitude', 10, 7)->nullable();
-            $table->decimal('longitude', 10, 7)->nullable();
             $table->string('client_name');
             $table->string('event_name', 120)->nullable();
             $table->string('male_parents')->nullable();
@@ -36,8 +34,6 @@ return new class extends Migration
             $table->string('image')->nullable();
             $table->string('description', 500)->nullable();
             $table->text('notes')->nullable();
-            $table->enum('priority', ['normal', 'darurat'])->default('normal');
-            $table->boolean('is_family')->default(false);
             $table->enum('status', ['tertunda','diterima','ditolak','selesai'])->default('tertunda');
             $table->timestamps();
         });

@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Performer extends Model
 {
@@ -46,15 +47,18 @@ class Performer extends Model
         return $q->where('is_active', 1);
     }
 
-    /** Internal = bukan eksternal */
     public function scopeInternal(Builder $q): Builder
     {
         return $q->where('is_external', 0);
     }
 
-    /** Eksternal */
     public function scopeExternal(Builder $q): Builder
     {
         return $q->where('is_external', 1);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

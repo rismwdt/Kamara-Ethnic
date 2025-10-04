@@ -13,63 +13,69 @@
                 </x-secondary-button>
             </a>
         </div>
+
         <form method="POST" action="{{ route('paket-acara.store') }}" enctype="multipart/form-data">
             @csrf
-            <div class="flex gap-x-6">
-                <div class="w-1/2 space-y-4">
+
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="w-full md:w-1/2 space-y-4">
                     <div>
                         <x-input-label for="name" value="Nama Paket" />
-                        <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" required value="{{ old('name') }}"/>
+                        <x-text-input id="name" name="name" type="text" class="mt-1 block w-full" required
+                            value="{{ old('name') }}" />
                         <x-input-error :messages="$errors->get('name')" class="mt-2" />
                     </div>
                 </div>
-                <div class="w-1/2 space-y-4">
+                <div class="w-full md:w-1/2 space-y-4">
                     <div>
                         <x-input-label for="price" value="Harga" />
-                        <x-text-input id="price" name="price" type="number" step="0.01" class="mt-1 block w-full" required value="{{ old('price') }}"/>
+                        <x-text-input id="price" name="price" type="number" step="0.01" class="mt-1 block w-full"
+                            required value="{{ old('price') }}" />
                         <x-input-error :messages="$errors->get('price')" class="mt-2" />
                     </div>
                 </div>
             </div>
-            <div class="flex gap-x-6 mt-4">
-                    <div class="w-1/2">
-                        <x-input-label for="type" value="Jenis Acara" />
-                        <select id="type" name="type" class="mt-1 block w-full rounded border-gray-300 shadow-sm" required>
-                            <option value="">Pilih Jenis Acara</option>
-                            <option value="siraman" {{ old('type') == 'siraman' ? 'selected' : '' }}>Siraman</option>
-                            <option value="upacara_adat" {{ old('type') == 'upacara_adat' ? 'selected' : '' }}>Upacara Adat</option>
-                            <option value="sisingaan" {{ old('type') == 'sisingaan' ? 'selected' : '' }}>Sisingaan</option>
-                            <option value="lainnya" {{ old('type') == 'lainnya' ? 'selected' : '' }}>Lainnya</option>
-                        </select>
-                        <x-input-error :messages="$errors->get('type')" class="mt-2" />
-                    </div>
-                    <div class="w-1/2">
-                        <x-input-label for="status" value="Status" />
-                        <select id="status" name="status" class="mt-1 block w-full rounded border-gray-300 shadow-sm" required>
-                            <option value="aktif" {{ old('type') == 'aktif' ? 'selected' : '' }}>Aktif</option>
-                            <option value="nonaktif" {{ old('type') == 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
-                        </select>
-                        <x-input-error :messages="$errors->get('status')" class="mt-2" />
-                    </div>
+
+            <div class="flex flex-col md:flex-row gap-4 mt-4">
+                <div class="w-full md:w-1/2">
+                    <x-input-label for="type" value="Jenis Acara" />
+                    <select id="type" name="type" class="mt-1 block w-full rounded border-gray-300 shadow-sm" required>
+                        <option value="">-- Pilih Jenis Acara --</option>
+                        <option value="siraman" {{ old('type') == 'siraman' ? 'selected' : '' }}>Siraman</option>
+                        <option value="upacara_adat" {{ old('type') == 'upacara_adat' ? 'selected' : '' }}>Upacara Adat
+                        </option>
+                        <option value="sisingaan" {{ old('type') == 'sisingaan' ? 'selected' : '' }}>Sisingaan</option>
+                        <option value="lainnya" {{ old('type') == 'lainnya' ? 'selected' : '' }}>Lainnya</option>
+                    </select>
+                    <x-input-error :messages="$errors->get('type')" class="mt-2" />
                 </div>
-            <div class="flex gap-x-6 mt-6">
-                <div class="w-1/2">
+                <div class="w-full md:w-1/2">
+                    <x-input-label for="status" value="Status" />
+                    <select id="status" name="status" class="mt-1 block w-full rounded border-gray-300 shadow-sm"
+                        required>
+                        <option value="aktif" {{ old('status') == 'aktif' ? 'selected' : '' }}>Aktif</option>
+                        <option value="nonaktif" {{ old('status') == 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+                    </select>
+                    <x-input-error :messages="$errors->get('status')" class="mt-2" />
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-4 mt-6">
+                <div class="w-full md:w-1/2">
                     <x-input-label for="description" value="Deskripsi" />
                     <textarea id="description" name="description" rows="5"
                         class="mt-1 block w-full rounded border border-gray-300 shadow-sm">{{ old('description') }}</textarea>
                     <x-input-error :messages="$errors->get('description')" class="mt-2" />
                 </div>
-                <div class="w-1/2">
+                <div class="w-full md:w-1/2">
                     <x-input-label for="image" value="Gambar" />
-                    <input
-                        type="file"
-                        name="image"
-                        id="image"
+                    <input type="file" name="image" id="image"
                         class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm text-sm text-gray-900 file:border-0
-                        file:mr-4 file:py-2 file:px-4 file:bg-gray-100 file:text-gray-700 file:rounded-md file:cursor-pointer" required/>
+                        file:mr-4 file:py-2 file:px-4 file:bg-gray-100 file:text-gray-700 file:rounded-md file:cursor-pointer" required />
                     <x-input-error :messages="$errors->get('image')" class="mt-2" />
                 </div>
             </div>
+
             <x-primary-button class="mt-6">SIMPAN</x-primary-button>
         </form>
     </main>

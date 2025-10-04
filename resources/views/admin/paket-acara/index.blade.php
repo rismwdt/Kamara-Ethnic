@@ -11,49 +11,66 @@
             {{ session('success') }}
         </div>
         @endif
+
         <div class="flex justify-between items-center mb-4">
             <x-add-button href="{{ route('paket-acara.create') }}" label="Tambah Paket Acara" />
         </div>
+
         <x-table>
             <x-slot name="thead">
                 <tr>
-                    <th class="px-4 py-2">No.</th>
-                    <th class="px-4 py-2">Gambar</th>
-                    <th class="px-4 py-2">Nama Paket</th>
-                    <th class="px-4 py-2">Jenis</th>
-                    <th class="px-4 py-2">Harga</th>
-                    <th class="px-4 py-2">Status</th>
-                    <th class="px-4 py-2">Deskripsi</th>
-                    <th class="px-4 py-2">Aksi</th>
+                    <th class="px-4 py-2 w-12">No.</th>
+                    <th class="px-4 py-2 w-40">Gambar</th>
+                    <th class="px-4 py-2 w-48">Nama Paket</th>
+                    <th class="px-4 py-2 w-32">Harga</th>
+                    <th class="px-4 py-2 w-28">Status</th>
+                    <th class="px-4 py-2 w-64">Deskripsi</th>
+                    <th class="px-4 py-2 w-32">Aksi</th>
                 </tr>
             </x-slot>
+
             @foreach ($events as $index => $event)
-            <tr>
-                <td class="px-4 py-2">{{ $index + 1 }}</td>
-                <td class="px-4 py-2">
+            <tr class="align-top">
+                <td class="px-4 py-3 text-center">{{ $index + 1 }}</td>
+
+                <td class="px-4 py-3">
                     @if ($event->image)
-                    <img src="{{ asset('storage/' . $event->image) }}" alt="Gambar"
-                        class="w-16 h-16 object-cover rounded">
+                    <div class="w-32 h-32 mx-auto rounded overflow-hidden border border-gray-200 shadow-sm">
+                        <img src="{{ asset('storage/' . $event->image) }}" alt="Gambar {{ $event->name }}"
+                            class="w-full h-full object-cover">
+                    </div>
                     @else
                     <span class="text-sm text-gray-500">Tidak ada</span>
                     @endif
                 </td>
-                <td class="px-4 py-2">{{ $event->name }}</td>
-                <td class="px-4 py-2 capitalize">{{ $event->type }}</td>
-                <td class="px-4 py-2">Rp{{ number_format($event->price, 0, ',', '.') }}</td>
-                <td class="px-4 py-2">
+
+                <td class="px-4 py-3 font-semibold">
+                    {{ $event->name }}
+                </td>
+
+                <td class="px-4 py-3">
+                    Rp{{ number_format($event->price, 0, ',', '.') }}
+                </td>
+
+                <td class="px-4 py-3">
                     @if ($event->status === 'aktif')
-                    <span class="inline-block bg-green-100 text-green-800 text-sm px-2 py-1 rounded font-medium">
+                    <span class="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded font-medium">
                         Aktif
                     </span>
                     @else
-                    <span class="inline-block bg-red-100 text-red-800 text-sm px-2 py-1 rounded font-medium">
+                    <span class="inline-block bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-medium">
                         Nonaktif
                     </span>
                     @endif
                 </td>
-                <td class="px-4 py-2">{{ $event->description ?? '-' }}</td>
-                <td class="px-4 py-2">
+
+                <td class="px-4 py-3">
+                    <div class="max-h-24 overflow-y-auto pr-1 text-sm leading-snug text-gray-700">
+                        {{ $event->description ?? '-' }}
+                    </div>
+                </td>
+
+                <td class="px-4 py-3">
                     <div class="flex justify-center items-center space-x-2">
                         <a href="{{ route('paket-acara.edit', $event->id) }}">
                             <x-primary-button class="text-xs px-2 py-1">
@@ -71,8 +88,9 @@
             </tr>
             @endforeach
         </x-table>
+
         <div class="mt-8 flex justify-center">
-                {{ $events->links() }}
+            {{ $events->links() }}
         </div>
     </main>
 </x-app-layout>

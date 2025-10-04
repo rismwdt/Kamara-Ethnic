@@ -39,21 +39,21 @@ class ValidatorController extends Controller
         $assign = $request->boolean('assign');
 
         try {
-    $result = $this->schedulerService->checkAvailabilityAndMaybeAssignToExisting(
-        (int)$validated['booking_id'],
-        (int)$validated['event_id'],
-        $validated['date'],
-        $validated['start_time'],
-        $validated['end_time'],
-        $loc,
-        $lat !== null ? (float)$lat : null,
-        $lng !== null ? (float)$lng : null,
-        $assign
-    );
+            $result = $this->schedulerService->checkAvailabilityAndMaybeAssignToExisting(
+                (int)$validated['booking_id'],
+                (int)$validated['event_id'],
+                $validated['date'],
+                $validated['start_time'],
+                $validated['end_time'],
+                $loc,
+                $lat !== null ? (float)$lat : null,
+                $lng !== null ? (float)$lng : null,
+                $assign
+            );
 
-    $result['ok'] = $result['available'] ?? false;
+        $result['ok'] = $result['available'] ?? false;
 
-    return response()->json($result, ($result['available'] ?? false) ? 200 : 200);
+        return response()->json($result, ($result['available'] ?? false) ? 200 : 200);
 
         } catch (ValidationException $e) {
             return response()->json([

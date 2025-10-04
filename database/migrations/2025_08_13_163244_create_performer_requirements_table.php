@@ -16,7 +16,6 @@ return new class extends Migration
             $table->unsignedBigInteger('event_id');
             $table->unsignedBigInteger('performer_role_id');
             $table->integer('quantity')->default(1);
-            $table->boolean('is_unique')->default(false);
             $table->text('notes')->nullable();
             $table->timestamps();
 

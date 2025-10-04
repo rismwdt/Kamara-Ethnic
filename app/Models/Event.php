@@ -24,4 +24,9 @@ class Event extends Model
     {
         return $this->hasMany(Booking::class);
     }
+
+    public function performerRequirements()
+    {
+        return $this->hasMany(\App\Models\PerformerRequirement::class, 'event_id');
+    }
 }

@@ -18,7 +18,6 @@ class OptimasiJadwalController extends Controller
         $from = $request->query('from', today()->toDateString());
         $to   = $request->query('to',   today()->addDays(7)->toDateString());
 
-        // bobot (%) -> dinormalisasi
         $weightsPct = [
             'deadline'   => (float)$request->query('w_deadline',   40),
             'value'      => (float)$request->query('w_value',      25),
@@ -41,34 +40,26 @@ class OptimasiJadwalController extends Controller
         return 0.00;
     }
 
-    /**
-     * Bangun data rekap + skor prioritas + status pemenuhan.
-     * Status menampilkan: "Role — butuh N, ditetapkan H, tersedia A".
-     */
     private function buildGreedy(string $from, string $to, array $w): Collection
     {
-        // Booking pada rentang tanggal
         $bookings = Booking::whereBetween('date', [$from, $to])
             ->get(['id','event_id','booking_code','client_name','date','created_at','priority','is_family','nuance','notes']);
 
         if ($bookings->isEmpty()) return collect();
 
-        // Kebutuhan per event (role & qty)
         $reqs = PerformerRequirement::whereIn('event_id', $bookings->pluck('event_id'))
             ->get(['event_id','performer_role_id','quantity']);
         if ($reqs->isEmpty()) return collect();
 
-        // Nama role
         $roleNames = PerformerRole::pluck('name', 'id');
 
-        // ----- Komponen skor -----
         $minDate    = $bookings->min('date');
         $maxDate    = $bookings->max('date');
         $minCreated = $bookings->min('created_at');
         $maxCreated = $bookings->max('created_at');
 
-        $valuePerEvent = $reqs->groupBy('event_id')->map(fn($rows) => (int)$rows->sum('quantity')); // total kebutuhan
-        $kindsPerEvent = $reqs->groupBy('event_id')->map(fn($rows) => (int)$rows->count());          // macam role
+        $valuePerEvent = $reqs->groupBy('event_id')->map(fn($rows) => (int)$rows->sum('quantity'));
+        $kindsPerEvent = $reqs->groupBy('event_id')->map(fn($rows) => (int)$rows->count());
 
         $minValue = $valuePerEvent->min() ?: 0;  $maxValue = $valuePerEvent->max() ?: 0;
         $minKinds = $kindsPerEvent->min() ?: 0;  $maxKinds = $kindsPerEvent->max() ?: 0;
@@ -78,14 +69,11 @@ class OptimasiJadwalController extends Controller
             return ($x - $min) / ($max - $min);
         };
 
-        // ----- Kapasitas performer per role (total) -----
         $totalPerRole = DB::table('performers')
             ->select('performer_role_id', DB::raw('COUNT(*) as total'))
             ->groupBy('performer_role_id')
-            ->pluck('total', 'performer_role_id'); // [role_id => total]
+            ->pluck('total', 'performer_role_id');
 
-        // ----- Performer yang sibuk per TANGGAL & ROLE (tertunda/dikonfirmasi) -----
-        // Catatan: level tanggal (belum memasukkan overlap jam + buffer).
         $busyByDateRole = DB::table('booking_performers as bp')
             ->join('performers as p', 'p.id', '=', 'bp.performer_id')
             ->join('bookings  as b', 'b.id', '=', 'bp.booking_id')
@@ -94,10 +82,9 @@ class OptimasiJadwalController extends Controller
             ->groupBy('b.date','p.performer_role_id')
             ->select('b.date as d', 'p.performer_role_id as role_id', DB::raw('COUNT(*) as total'))
             ->get()
-            ->groupBy('d')                                        // [date => rows]
-            ->map(fn($rows) => $rows->pluck('total','role_id'));  // [role_id => total]
+            ->groupBy('d')
+            ->map(fn($rows) => $rows->pluck('total','role_id'));
 
-        // ----- Yang SUDAH ditetapkan per booking & role (progress) -----
         $assignedByBooking = DB::table('booking_performers as bp')
             ->join('performers as p', 'p.id', '=', 'bp.performer_id')
             ->whereIn('bp.booking_id', $bookings->pluck('id'))
@@ -106,7 +93,7 @@ class OptimasiJadwalController extends Controller
             ->select('bp.booking_id', 'p.performer_role_id as role_id', DB::raw('COUNT(*) as total'))
             ->get()
             ->groupBy('booking_id')
-            ->map(fn($rows) => $rows->pluck('total','role_id')); // [booking_id => [role_id => total]]
+            ->map(fn($rows) => $rows->pluck('total','role_id'));
 
         $rows = collect();
 
@@ -114,7 +101,6 @@ class OptimasiJadwalController extends Controller
             $eventReqs = $reqs->where('event_id', $b->event_id);
             if ($eventReqs->isEmpty()) continue;
 
-            // ----- Skor prioritas -----
             $deadlineScore   = 1 - $norm(
                 (float) Carbon::parse($b->date)->timestamp,
                 (float) Carbon::parse($minDate)->timestamp,
@@ -126,7 +112,6 @@ class OptimasiJadwalController extends Controller
                 (float) Carbon::parse($maxCreated)->timestamp
             );
             $valueScore      = $norm((float)($valuePerEvent[$b->event_id] ?? 0), (float)$minValue, (float)$maxValue);
-            // complexity makin tinggi -> skor diturunkan (1 - norm)
             $complexityScore = 1 - $norm((float)($kindsPerEvent[$b->event_id] ?? 0), (float)$minKinds, (float)$maxKinds);
             $customerScore   = $this->customerPriorityScore($b);
 
@@ -136,7 +121,6 @@ class OptimasiJadwalController extends Controller
                          + ($w['customer']   * $customerScore)
                          + ($w['time']       * $timeScore);
 
-            // ----- Daftar role & qty pada event ini -----
             $pairs = $eventReqs->map(fn($r) => [
                 'role_id' => (int)$r->performer_role_id,
                 'role'    => $roleNames[$r->performer_role_id] ?? ('Peran #'.$r->performer_role_id),
@@ -145,18 +129,14 @@ class OptimasiJadwalController extends Controller
 
             $rolesList = $pairs->map(fn($p) => "{$p['role']} ({$p['qty']})")->all();
 
-            // Progress yg sudah ditetapkan
-            $assignedForThis = $assignedByBooking[$b->id] ?? collect(); // [role_id => total]
+            $assignedForThis = $assignedByBooking[$b->id] ?? collect();
 
-            // Buat key string tanggal (hindari Carbon sebagai offset)
             $dateKey = $b->date instanceof Carbon
                 ? $b->date->toDateString()
                 : (string) Carbon::parse($b->date)->toDateString();
 
-            // Map "role_id => total busy" untuk tanggal booking ini
             $busyMapForThisDate = $busyByDateRole->get($dateKey, collect());
 
-            // ----- Status per role -----
             $missing = [];
             $totalRequired = 0;
             $gapQty = 0;
@@ -165,15 +145,12 @@ class OptimasiJadwalController extends Controller
                 $need = (int)$p['qty'];
                 $have = (int)($assignedForThis[$p['role_id']] ?? 0);
 
-                // performer yang sibuk pada tanggal tsb untuk role ini
                 $busyCount = (int) $busyMapForThisDate->get($p['role_id'], 0);
 
-                // kurangi dengan yang SUDAH ditetapkan di booking ini agar tidak double-count
                 $busyCount = max(0, $busyCount - $have);
 
                 $totalCapacity = (int) ($totalPerRole[$p['role_id']] ?? 0);
 
-                // kandidat tersedia pada tanggal tsb (tanpa cek menit/buffer)
                 $avail = max(0, $totalCapacity - $busyCount);
 
                 $totalRequired += $need;
@@ -189,7 +166,6 @@ class OptimasiJadwalController extends Controller
                 }
             }
 
-            // Dampening prioritas berdasar gap terpenuhi (opsional)
             $gapRatio = ($totalRequired > 0) ? ($gapQty / $totalRequired) : 0.0;
             $priorityEffective = $gapRatio <= 0
                 ? 0.0

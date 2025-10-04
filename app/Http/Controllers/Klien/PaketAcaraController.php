@@ -9,7 +9,7 @@ class PaketAcaraController extends Controller
 {
     public function index()
     {
-        $events = Event::where('status', 'aktif')->get(); // Ambil semua event aktif
+        $events = Event::where('status', 'aktif')->get(); 
         return view('klien.paket-acara', compact('events'));
     }
 }

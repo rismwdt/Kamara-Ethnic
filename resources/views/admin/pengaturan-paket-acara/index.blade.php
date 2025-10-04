@@ -29,49 +29,47 @@
                 </x-slot>
 
                 @php
-                    $no = ($grouped->currentPage()-1) * $grouped->perPage() + 1;
+                $no = ($grouped->currentPage()-1) * $grouped->perPage() + 1;
                 @endphp
 
                 @foreach ($grouped as $group)
-                    @php
-                        $event = $group->first()->event;
-                        // gabungkan catatan yang terisi (jika ada)
-                        $notes = $group->pluck('notes')->filter()->unique()->values()->all();
-                    @endphp
-                    <tr>
-                        <td class="px-4 py-2">{{ $no++ }}</td>
-                        <td class="px-4 py-2">{{ $event->name ?? '-' }}</td>
-                        <td class="px-4 py-2">
-                            <ul class="list-disc list-inside">
-                                @foreach ($group as $req)
-                                    <li>{{ $req->performerRole->name ?? '-' }} ({{ $req->quantity }} orang)</li>
-                                @endforeach
-                            </ul>
-                        </td>
-                        <td class="px-4 py-2">
-                            {{ count($notes) ? implode('; ', $notes) : '—' }}
-                        </td>
-                        <td class="px-4 py-2">
-                            <div class="flex space-x-2">
-                                <a href="{{ route('pengaturan-paket-acara.edit', $event->id) }}">
-    <x-primary-button class="text-xs px-2 py-1">
-        <i class="fas fa-edit"></i>
-    </x-primary-button>
-</a>
+                @php
+                $event = $group->first()->event;
+                $notes = $group->pluck('notes')->filter()->unique()->values()->all();
+                @endphp
+                <tr>
+                    <td class="px-4 py-2">{{ $no++ }}</td>
+                    <td class="px-4 py-2">{{ $event->name ?? '-' }}</td>
+                    <td class="px-4 py-2">
+                        <ul class="list-disc list-inside">
+                            @foreach ($group as $req)
+                            <li>{{ $req->performerRole->name ?? '-' }} ({{ $req->quantity }} orang)</li>
+                            @endforeach
+                        </ul>
+                    </td>
+                    <td class="px-4 py-2">
+                        {{ count($notes) ? implode('; ', $notes) : '—' }}
+                    </td>
+                    <td class="px-4 py-2">
+                        <div class="flex space-x-2">
+                            <a href="{{ route('pengaturan-paket-acara.edit', $event->id) }}">
+                                <x-primary-button class="text-xs px-2 py-1">
+                                    <i class="fas fa-edit"></i>
+                                </x-primary-button>
+                            </a>
 
-<x-danger-button type="button"
-    onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'delete-{{ $event->id }}' }))">
-    <i class="fas fa-trash"></i>
-</x-danger-button>
-<x-modal-delete name="delete-{{ $event->id }}"
-    :itemId="$event->id"
-    :itemName="'Pengaturan ' . ($event->name ?? 'Data')"
-    route="pengaturan-paket-acara.destroy" />
+                            <x-danger-button type="button"
+                                onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'delete-{{ $event->id }}' }))">
+                                <i class="fas fa-trash"></i>
+                            </x-danger-button>
+                            <x-modal-delete name="delete-{{ $event->id }}" :itemId="$event->id"
+                                :itemName="'Pengaturan ' . ($event->name ?? 'Data')"
+                                route="pengaturan-paket-acara.destroy" />
 
 
-                            </div>
-                        </td>
-                    </tr>
+                        </div>
+                    </td>
+                </tr>
                 @endforeach
             </x-table>
 

@@ -60,9 +60,25 @@
                     @endif
 
                     <tr>
-                        <th class="py-2 pr-4 font-medium">No. HP</th>
-                        <td>: {{ $booking->phone }}</td>
-                    </tr>
+    <th class="py-2 pr-4 font-medium">No. HP</th>
+    <td>:
+        @php
+            // hapus karakter non angka, misal spasi atau strip
+            $phone = preg_replace('/\D/', '', $booking->phone);
+
+            // kalau nomor diawali "0" ubah ke "62"
+            if (substr($phone, 0, 1) === '0') {
+                $phone = '62' . substr($phone, 1);
+            }
+        @endphp
+
+        <a href="https://wa.me/{{ $phone }}" target="_blank"
+           class="text-primary hover:underline">
+            {{ $booking->phone }}
+        </a>
+    </td>
+</tr>
+
 
                     <tr>
                         <th class="py-2 pr-4 font-medium">Email</th>
@@ -136,7 +152,7 @@
                         </td>
                     </tr>
 
-                    <tr>
+                    {{-- <tr>
                         <th class="py-2 pr-4 font-medium">Prioritas</th>
                         <td>:
                             @php
@@ -149,7 +165,7 @@
                                 <span class="ml-2 px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">Dari keluarga/relasi</span>
                             @endif
                         </td>
-                    </tr>
+                    </tr> --}}
 
                     <tr>
                         <th class="py-2 pr-4 font-medium">Pengisi Acara</th>

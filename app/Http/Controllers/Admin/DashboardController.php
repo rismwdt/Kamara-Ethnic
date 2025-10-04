@@ -16,8 +16,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // ==== Bagian dashboard lama (kartu ringkas) ====
-        $bookings = Booking::with(['event','performers'])->get();
+        $bookings = Booking::with('event')->get();
 
         $totalPendapatan = $bookings->sum(fn ($b) => $b->event->price ?? 0);
 
@@ -33,7 +32,8 @@ class DashboardController extends Controller
 
         $jumlahKlien = $bookings->unique('email')->count();
 
-        $jumlahKlienBulanIni = Booking::whereMonth('date', now()->month)
+        $jumlahKlienBulanIni = Booking::whereYear('date', now()->year)
+            ->whereMonth('date', now()->month)
             ->distinct('email')
             ->count('email');
 
@@ -46,13 +46,30 @@ class DashboardController extends Controller
             ->take(5)
             ->values();
 
-        $tanggalDenganAcara = Booking::whereMonth('date', now()->month)
+        $tanggalDenganAcara = Booking::whereYear('date', now()->year)
+            ->whereMonth('date', now()->month)
             ->selectRaw('date, COUNT(*) as jumlah')
             ->groupBy('date')
             ->get()
             ->mapWithKeys(fn ($row) => [Carbon::parse($row->date)->format('Y-m-d') => $row->jumlah]);
 
-        // ==== Card tambahan (kapasitas, performer, durasi) ====
+        $now = now();
+        $rangeStart = $now->copy()->startOfMonth()->subMonths(6)->toDateString();
+        $rangeEnd   = $now->copy()->endOfMonth()->addMonths(6)->toDateString();
+
+        $rows = Booking::whereBetween('date', [$rangeStart, $rangeEnd])
+            ->selectRaw('date, COUNT(*) as total')
+            ->groupBy('date')
+            ->pluck('total', 'date')
+            ->toArray();
+
+        $countsByMonth = [];
+        foreach ($rows as $date => $count) {
+            $ym = Carbon::parse($date)->format('Y-m'); // kunci bulan
+            $d  = Carbon::parse($date)->format('Y-m-d'); // kunci tanggal
+            $countsByMonth[$ym][$d] = (int) $count;
+        }
+
         $totalPerformer   = Performer::count();
 
         $maxEventsPerDay  = 5; // kebijakan
@@ -70,13 +87,10 @@ class DashboardController extends Controller
             2
         );
 
-        // ==== Rekap prioritas TOP 5 (logika sama seperti OptimasiJadwalController) ====
-        // Bobot default (boleh disetel)
         $weightsPct = ['deadline'=>40, 'value'=>25, 'complexity'=>20, 'customer'=>10, 'time'=>5];
         $sum = max(1, array_sum($weightsPct));
         $w   = array_map(fn($v)=>$v/$sum, $weightsPct);
 
-        // Rentang 7 hari ke depan (bisa diubah)
         $from = today()->toDateString();
         $to   = today()->addDays(7)->toDateString();
 
@@ -99,23 +113,25 @@ class DashboardController extends Controller
             'kapasitasHariIni',
             'totalKapasitas',
             'avgDurasi',
-            'rekap'
+            'rekap',
+            'countsByMonth'
         ));
     }
 
-    // ================= helper rekap prioritas (copy of "terbaik") =================
-
     private function customerPriorityScore(Booking $b): float
     {
-        if ($b->priority === 'darurat') return 1.00;
-        if ($b->is_family)              return 0.70;
+        $priority = $b->getAttribute('priority');
+        $isFamily = (bool) $b->getAttribute('is_family');
+
+        if ($priority === 'darurat') return 1.00;
+        if ($isFamily)               return 0.70;
         return 0.00;
     }
 
     private function buildGreedyRecap(string $from, string $to, array $w): Collection
     {
         $bookings = Booking::whereBetween('date', [$from, $to])
-            ->get(['id','event_id','booking_code','client_name','date','created_at','priority','is_family']);
+            ->get(['id','event_id','booking_code','client_name','date','created_at']);
 
         if ($bookings->isEmpty()) return collect();
 
@@ -136,21 +152,7 @@ class DashboardController extends Controller
         $minValue = $valuePerEvent->min() ?: 0;  $maxValue = $valuePerEvent->max() ?: 0;
         $minKinds = $kindsPerEvent->min() ?: 0;  $maxKinds = $kindsPerEvent->max() ?: 0;
 
-        $norm = function (float $x, float $min, float $max): float {
-            if ($max <= $min) return 0.5;
-            return ($x - $min) / ($max - $min);
-        };
-
-        // jumlah performer yang SUDAH mengunci slot per booking per role
-        $assignedByBooking = DB::table('booking_performers as bp')
-            ->join('performers as p', 'p.id', '=', 'bp.performer_id')
-            ->whereIn('bp.booking_id', $bookings->pluck('id'))
-            ->whereIn('bp.confirmation_status', ['tertunda','dikonfirmasi'])
-            ->groupBy('bp.booking_id','p.performer_role_id')
-            ->select('bp.booking_id', 'p.performer_role_id as role_id', DB::raw('COUNT(*) as total'))
-            ->get()
-            ->groupBy('booking_id')
-            ->map(fn($rows) => $rows->pluck('total','role_id'));
+        $assignedByBooking = collect();
 
         $rows = collect();
 
@@ -158,19 +160,10 @@ class DashboardController extends Controller
             $eventReqs = $reqs->where('event_id', $b->event_id);
             if ($eventReqs->isEmpty()) continue;
 
-            // skor dasar
-            $deadlineScore   = 1 - $norm(
-                (float) Carbon::parse($b->date)->timestamp,
-                (float) Carbon::parse($minDate)->timestamp,
-                (float) Carbon::parse($maxDate)->timestamp
-            );
-            $timeScore       = $norm(
-                (float) Carbon::parse($b->created_at)->timestamp,
-                (float) Carbon::parse($minCreated)->timestamp,
-                (float) Carbon::parse($maxCreated)->timestamp
-            );
-            $valueScore      = $norm((float)($valuePerEvent[$b->event_id] ?? 0), (float)$minValue, (float)$maxValue);
-            $complexityScore = 1 - $norm((float)($kindsPerEvent[$b->event_id] ?? 0), (float)$minKinds, (float)$maxKinds);
+            $deadlineScore   = 1 - $this->normTimestamp($b->date, $minDate, $maxDate);
+            $timeScore       = $this->normTimestamp($b->created_at, $minCreated, $maxCreated);
+            $valueScore      = 1 * $this->normNumber($valuePerEvent[$b->event_id] ?? 0, $minValue, $maxValue);
+            $complexityScore = 1 - $this->normNumber($kindsPerEvent[$b->event_id] ?? 0, $minKinds, $maxKinds);
             $customerScore   = $this->customerPriorityScore($b);
 
             $priorityRaw = ($w['deadline']   * $deadlineScore)
@@ -179,7 +172,6 @@ class DashboardController extends Controller
                          + ($w['customer']   * $customerScore)
                          + ($w['time']       * $timeScore);
 
-            // kebutuhan peran + status pemenuhan
             $pairs = $eventReqs->map(fn($r) => [
                 'role_id' => (int)$r->performer_role_id,
                 'role'    => $roleNames[$r->performer_role_id] ?? ('Peran #'.$r->performer_role_id),
@@ -205,26 +197,23 @@ class DashboardController extends Controller
                 }
             }
 
-            // redam skor berdasar gap
             $gapRatio = ($totalRequired > 0) ? ($gapQty / $totalRequired) : 0.0;
-            if ($gapRatio <= 0) {
-                $priorityEffective = 0.0; // semua terpenuhi → nol
-            } else {
-                $factor = 0.35 + 0.65 * $gapRatio; // makin kecil gap → makin turun
-                $priorityEffective = $priorityRaw * $factor;
-            }
+            $priorityEffective = $gapRatio <= 0 ? 0.0 : $priorityRaw * (0.35 + 0.65 * $gapRatio);
 
-            $customerLabel = $b->priority === 'darurat'
+            $priority = $b->getAttribute('priority');
+            $isFamily = (bool) $b->getAttribute('is_family');
+
+            $customerLabel = $priority === 'darurat'
                 ? 'Darurat'
-                : ($b->is_family ? 'Keluarga' : 'Normal');
+                : ($isFamily ? 'Keluarga' : 'Normal');
 
             $rows->push((object)[
                 'kode'               => ($b->booking_code ?? ('BK-'.$b->id)),
                 'klien'              => $b->client_name,
                 'roles_list'         => $rolesList,
                 'deadline'           => $b->date,
-                'value'              => $valuePerEvent[$b->event_id] ?? 0, // total kebutuhan orang
-                'complexity'         => $kindsPerEvent[$b->event_id] ?? 0, // banyaknya jenis peran
+                'value'              => $valuePerEvent[$b->event_id] ?? 0,
+                'complexity'         => $kindsPerEvent[$b->event_id] ?? 0,
                 'customer'           => $customerLabel,
                 'time'               => Carbon::parse($b->created_at)->format('Y-m-d'),
                 'priority_score'     => number_format($priorityEffective, 3),
@@ -237,5 +226,20 @@ class DashboardController extends Controller
         }
 
         return $rows->sortByDesc('priority_score_raw')->values();
+    }
+
+    private function normTimestamp($ts, $min, $max): float
+    {
+        $x   = (float) Carbon::parse($ts)->timestamp;
+        $min = (float) Carbon::parse($min)->timestamp;
+        $max = (float) Carbon::parse($max)->timestamp;
+        if ($max <= $min) return 0.5;
+        return ($x - $min) / ($max - $min);
+    }
+
+    private function normNumber(float $x, float $min, float $max): float
+    {
+        if ($max <= $min) return 0.5;
+        return ($x - $min) / ($max - $min);
     }
 }
